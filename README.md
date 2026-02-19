@@ -84,7 +84,7 @@ exclude_paths:
 
 `fastererer` is a hard fork of [fasterer](https://github.com/DamirSvrtan/fasterer) at v0.11.0. It carries forward the original work and adds:
 
-- Support for Ruby 3.2+ (drops EOL Rubies 2.x, 3.0, 3.1) and Ruby 4.0
+- Support for Ruby 3.3+ (drops EOL Rubies 2.x, 3.0, 3.1, 3.2) and Ruby 4.0
 - Native [Prism](https://github.com/ruby/prism) parsing (replaces the EOL `ruby_parser` dependency)
 - Active maintenance and security updates
 
