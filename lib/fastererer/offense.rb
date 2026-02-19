@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Fastererer
   class Offense
     attr_reader :offense_name, :line_number

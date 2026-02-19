@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Fastererer
   class MethodCall
     attr_reader :element

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Fastererer
   module Painter
     COLOR_CODES = {

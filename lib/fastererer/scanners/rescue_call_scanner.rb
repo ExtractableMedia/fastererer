@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fastererer/rescue_call'
 require 'fastererer/offense'
 require 'fastererer/scanners/offensive'
