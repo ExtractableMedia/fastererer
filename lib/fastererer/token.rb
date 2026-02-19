@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Fastererer
   class Token
     def initialize(name)
