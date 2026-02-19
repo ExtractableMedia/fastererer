@@ -65,7 +65,7 @@ module Fastererer
       return if first_argument.type != :regular_argument
 
       if method_definition.body.first.sexp_type == :iasgn &&
-         method_definition.body.first[1].to_s == "@#{method_definition.name.to_s[0..-2]}" &&
+         method_definition.body.first[1].to_s == "@#{method_definition.name.to_s.delete_suffix('=')}" &&
          method_definition.body.first[2][1] == first_argument.name
 
         add_offense(:setter_vs_attr_writer)
