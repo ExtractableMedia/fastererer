@@ -26,11 +26,12 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
 
-  spec.required_ruby_version = '>= 2.3'
+  spec.required_ruby_version = '>= 3.3'
 
-  spec.add_dependency 'ruby_parser', '>= 3.19.1'
+  spec.add_dependency 'ruby_parser', '>= 3.22.0'
 
   spec.add_development_dependency 'bundler', '>= 1.6'
+  spec.add_development_dependency 'ostruct', '>= 0.6'
   spec.add_development_dependency 'pry',     '~> 0.10'
   spec.add_development_dependency 'rake',    '>= 12.3.3'
   spec.add_development_dependency 'rspec',   '~> 3.2'

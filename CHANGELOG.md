@@ -8,6 +8,8 @@ Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior t
 - Config filename changed from `.fasterer.yml` to `.fastererer.yml`
 - Executable changed from `fasterer` to `fastererer`
 - Module renamed from `Fasterer` to `Fastererer`
+- Add explicit support for Ruby 4.0
+- Drop support for EOL Ruby versions (2.x, 3.0, 3.1, 3.2). The minimum required Ruby version is now 3.3.
 
 ## 0.11.0
 
