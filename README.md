@@ -2,13 +2,19 @@
 
 # Fastererer
 
-`fastererer` is a maintained fork of [fasterer](https://github.com/DamirSvrtan/fasterer) (originally by [Damir Svrtan](https://github.com/DamirSvrtan)), updated for Ruby 4.0 and built on the [Prism](https://github.com/ruby/prism) parser.
+`fastererer` is a maintained fork of [fasterer][fasterer] (originally by
+[Damir Svrtan][damir-svrtan]), updated for Ruby 4.0 and built on the [Prism][prism] parser.
 
-Make your Rubies go faster with this command line tool highly inspired by [fast-ruby](https://github.com/JuanitoFatas/fast-ruby) and [Sferik's talk at Baruco Conf](https://speakerdeck.com/sferik/writing-fast-ruby).
+Make your Rubies go faster with this command line tool highly inspired by
+[fast-ruby][fast-ruby] and [Sferik's talk at Baruco Conf][sferik-talk].
 
-Fastererer will suggest some speed improvements which you can check in detail at the [fast-ruby repo](https://github.com/JuanitoFatas/fast-ruby).
+Fastererer will suggest some speed improvements which you can check in detail at the
+[fast-ruby repo][fast-ruby].
 
-**Please note** that you shouldn't follow the suggestions blindly. Using a while loop instead of a each_with_index probably shouldn't be considered if you're doing a regular Rails project, but maybe if you're doing something very speed dependent such as Rack or if you're building your own framework, you might consider this speed increase.
+**Please note** that you shouldn't follow the suggestions blindly. Using a while loop instead of
+a each_with_index probably shouldn't be considered if you're doing a regular Rails project, but
+maybe if you're doing something very speed dependent such as Rack or if you're building your own
+framework, you might consider this speed increase.
 
 
 
@@ -82,10 +88,11 @@ exclude_paths:
 
 ## Relationship to fasterer
 
-`fastererer` is a hard fork of [fasterer](https://github.com/DamirSvrtan/fasterer) at v0.11.0. It carries forward the original work and adds:
+`fastererer` is a hard fork of [fasterer][fasterer] at v0.11.0. It carries forward the original
+work and adds:
 
 - Support for Ruby 3.3+ (drops EOL Rubies 2.x, 3.0, 3.1, 3.2) and Ruby 4.0
-- Native [Prism](https://github.com/ruby/prism) parsing (replaces the EOL `ruby_parser` dependency)
+- Native [Prism][prism] parsing (replaces the EOL `ruby_parser` dependency)
 - Active maintenance and security updates
 
 Existing projects migrating from `fasterer` should:
@@ -107,8 +114,16 @@ Existing projects migrating from `fasterer` should:
 
 ## Contributing
 
-1. Fork it ( https://github.com/ExtractableMedia/fastererer/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue,
+PR, and local development workflow.
+
+## Code of Conduct
+
+Everyone interacting in this project's codebases, issue trackers, and discussions is expected to
+follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+[damir-svrtan]: https://github.com/DamirSvrtan
+[fast-ruby]: https://github.com/JuanitoFatas/fast-ruby
+[fasterer]: https://github.com/DamirSvrtan/fasterer
+[prism]: https://github.com/ruby/prism
+[sferik-talk]: https://speakerdeck.com/sferik/writing-fast-ruby
