@@ -5,8 +5,8 @@ SimpleCov.start do
   add_filter '/vendor/'
 end
 
-require 'fasterer'
-require 'fasterer/cli'
+require 'fastererer'
+require 'fastererer/cli'
 require 'pry'
 
 Dir["#{File.dirname(__FILE__)}/support/*.rb"].each { |f| require f }
@@ -25,6 +25,6 @@ RSpec.configure do |config|
   end
 
   config.before(:each) do
-    allow_any_instance_of(Fasterer::FileTraverser).to receive(:puts).and_return(nil)
+    allow_any_instance_of(Fastererer::FileTraverser).to receive(:puts).and_return(nil)
   end
 end

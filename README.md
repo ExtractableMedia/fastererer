@@ -1,12 +1,12 @@
-[![Build Status](https://github.com/DamirSvrtan/fasterer/actions/workflows/ruby.yml/badge.svg)](https://github.com/DamirSvrtan/fasterer/actions/workflows/ruby.yml)
-[![Code Climate](https://codeclimate.com/github/DamirSvrtan/fasterer/badges/gpa.svg)](https://codeclimate.com/github/DamirSvrtan/fasterer)
-[![Gem Version](https://badge.fury.io/rb/fasterer.svg)](http://badge.fury.io/rb/fasterer)
+[![Build Status](https://github.com/ExtractableMedia/fastererer/actions/workflows/ruby.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ruby.yml)
 
-# Fasterer
+# Fastererer
+
+`fastererer` is a maintained fork of [fasterer](https://github.com/DamirSvrtan/fasterer) (originally by [Damir Svrtan](https://github.com/DamirSvrtan)), updated for Ruby 4.0 and built on the [Prism](https://github.com/ruby/prism) parser.
 
 Make your Rubies go faster with this command line tool highly inspired by [fast-ruby](https://github.com/JuanitoFatas/fast-ruby) and [Sferik's talk at Baruco Conf](https://speakerdeck.com/sferik/writing-fast-ruby).
 
-Fasterer will suggest some speed improvements which you can check in detail at the [fast-ruby repo](https://github.com/JuanitoFatas/fast-ruby).
+Fastererer will suggest some speed improvements which you can check in detail at the [fast-ruby repo](https://github.com/JuanitoFatas/fast-ruby).
 
 **Please note** that you shouldn't follow the suggestions blindly. Using a while loop instead of a each_with_index probably shouldn't be considered if you're doing a regular Rails project, but maybe if you're doing something very speed dependent such as Rack or if you're building your own framework, you might consider this speed increase.
 
@@ -15,7 +15,7 @@ Fasterer will suggest some speed improvements which you can check in detail at t
 ## Installation
 
 ```shell
-gem install fasterer
+gem install fastererer
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ gem install fasterer
 Run it from the root of your project:
 
 ```shell
-fasterer
+fastererer
 ```
 
 ## Example output
@@ -43,7 +43,7 @@ spec/cache/mem_cache_store_spec.rb:161 Use tr instead of gsub when grepping plai
 ```
 ## Configuration
 
-Configuration is done through the **.fasterer.yml** file. This can placed in the root of your 
+Configuration is done through the **.fastererer.yml** file. This can placed in the root of your
 project, or any ancestor folder.
 
 Options:
@@ -80,28 +80,19 @@ exclude_paths:
   - 'db/schema.rb'
 ```
 
-## Integrations
+## Relationship to fasterer
 
-These 3rd-party integrations enable you to run `fasterer` automatically
-as part of a larger framework.
+`fastererer` is a hard fork of [fasterer](https://github.com/DamirSvrtan/fasterer) at v0.11.0. It carries forward the original work and adds:
 
-* https://github.com/jumanjihouse/pre-commit-hooks
+- Support for Ruby 3.2+ (drops EOL Rubies 2.x, 3.0, 3.1) and Ruby 4.0
+- Native [Prism](https://github.com/ruby/prism) parsing (replaces the EOL `ruby_parser` dependency)
+- Active maintenance and security updates
 
-  This integration allows to use `fasterer` as either a pre-commit hook or within CI.
-  It uses the https://pre-commit.com/ framework for managing and maintaining
-  multi-language pre-commit hooks.
+Existing projects migrating from `fasterer` should:
 
-* https://github.com/prontolabs/pronto-fasterer
-
-  Pronto runner for Fasterer, speed improvements suggester.
-  [Pronto](https://github.com/mmozuras/pronto) also integrates via
-  [danger-pronto](https://github.com/RestlessThinker/danger-pronto) into the
-  [danger](https://github.com/danger/danger) framework for pull requests
-  on Github, Gitlab, and BitBucket.
-
-* https://github.com/vk26/action-fasterer
-
-  Github-action for running fasterer via [reviewdog](https://github.com/reviewdog/reviewdog). Reviewdog provides a way to post review comments in pull requests.
+1. Replace `gem 'fasterer'` with `gem 'fastererer'` in their Gemfile
+2. Rename `.fasterer.yml` to `.fastererer.yml`
+3. Update CI commands from `fasterer` to `fastererer`
 
 ## Speedups TODO:
 
@@ -116,7 +107,7 @@ as part of a larger framework.
 
 ## Contributing
 
-1. Fork it ( https://github.com/DamirSvrtan/fasterer/fork )
+1. Fork it ( https://github.com/ExtractableMedia/fastererer/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
