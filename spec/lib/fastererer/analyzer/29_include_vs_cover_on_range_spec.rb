@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Fastererer::Analyzer do
@@ -5,8 +7,8 @@ describe Fastererer::Analyzer do
     RSpec.root.join('support', 'analyzer', '29_include_vs_cover_on_range.rb')
   end
 
-  it 'should detect 3 include? method calls' do
-    analyzer = Fastererer::Analyzer.new(test_file_path)
+  it 'detects 3 include? method calls' do
+    analyzer = described_class.new(test_file_path)
     analyzer.scan
     expect(analyzer.errors[:include_vs_cover_on_range].count).to eq(3)
   end

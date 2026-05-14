@@ -4,14 +4,16 @@ module Fastererer
   module Painter
     COLOR_CODES = {
       red: 31,
-      green: 32,
-    }
+      green: 32
+    }.freeze
 
     def self.paint(string, color)
       color_code = COLOR_CODES[color.to_sym]
       if color_code.nil?
-        raise ArgumentError, "Color #{color} is not supported. Allowed colors are #{COLOR_CODES.keys.join(', ')}"
+        raise ArgumentError,
+              "Color #{color} is not supported. Allowed colors are #{COLOR_CODES.keys.join(', ')}"
       end
+
       paint_with_code(string, color_code)
     end
 

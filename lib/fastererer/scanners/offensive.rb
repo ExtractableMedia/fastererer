@@ -10,7 +10,7 @@ module Fastererer
       !!offense
     end
 
-    alias_method :offense_detected?, :offensive?
+    alias offense_detected? offensive?
 
     private
 
@@ -19,7 +19,7 @@ module Fastererer
     end
 
     def check_offense
-      fail NotImplementedError
+      raise NotImplementedError
     end
   end
 end

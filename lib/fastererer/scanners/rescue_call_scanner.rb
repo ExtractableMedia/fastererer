@@ -18,9 +18,9 @@ module Fastererer
     private
 
     def check_offense
-      if rescue_call.rescue_classes.include? :NoMethodError
-        add_offense(:rescue_vs_respond_to)
-      end
+      return unless rescue_call.rescue_classes.include? :NoMethodError
+
+      add_offense(:rescue_vs_respond_to)
     end
 
     def rescue_call

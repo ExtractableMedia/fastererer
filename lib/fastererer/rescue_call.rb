@@ -2,8 +2,7 @@
 
 module Fastererer
   class RescueCall
-    attr_reader :element
-    attr_reader :rescue_classes
+    attr_reader :element, :rescue_classes
 
     def initialize(element)
       @element = element

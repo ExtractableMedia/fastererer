@@ -2,14 +2,9 @@
 
 module Fastererer
   class MethodCall
-    attr_reader :element
-    attr_reader :receiver
-    attr_reader :method_name
-    attr_reader :arguments
-    attr_reader :block_body
-    attr_reader :block_argument_names
+    attr_reader :element, :receiver, :method_name, :arguments, :block_body, :block_argument_names
 
-    alias_method :name, :method_name
+    alias name method_name
 
     def initialize(element)
       @element = element
@@ -41,6 +36,7 @@ module Fastererer
     private
 
     attr_reader :call_element
+
     # TODO: explanation
     def set_call_element
       @call_element = case element.sexp_type
@@ -89,11 +85,11 @@ module Fastererer
 
       case receiver_info.sexp_type
       when :lvar
-        return VariableReference.new(receiver_info)
+        VariableReference.new(receiver_info)
       when :call, :iter
-        return MethodCall.new(receiver_info)
+        MethodCall.new(receiver_info)
       when :array, :dot2, :dot3, :lit
-        return Primitive.new(receiver_info)
+        Primitive.new(receiver_info)
       end
     end
   end
@@ -135,7 +131,7 @@ module Fastererer
     end
 
     def range?
-      [:dot2, :dot3, :lit].include?(type)
+      %i[dot2 dot3 lit].include?(type)
     end
 
     def array?

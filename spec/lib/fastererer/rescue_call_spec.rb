@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Fastererer::RescueCall do
@@ -9,21 +11,21 @@ describe Fastererer::RescueCall do
   end
 
   let(:rescue_call) do
-    Fastererer::RescueCall.new(rescue_element)
+    described_class.new(rescue_element)
   end
 
   describe 'plain rescue call' do
     let(:file_name) { 'plain_rescue.rb' }
 
-    it 'should detect constant' do
-      expect(rescue_call.rescue_classes).to eq(Sexp.new())
+    it 'detects constant' do
+      expect(rescue_call.rescue_classes).to eq(Sexp.new)
     end
   end
 
   describe 'rescue call with class' do
     let(:file_name) { 'rescue_with_class.rb' }
 
-    it 'should detect integer' do
+    it 'detects integer' do
       expect(rescue_call.rescue_classes).to eq(Sexp.new(:NoMethodError))
     end
   end
@@ -31,7 +33,7 @@ describe Fastererer::RescueCall do
   describe 'rescue call with class and variable' do
     let(:file_name) { 'rescue_with_class_and_variable.rb' }
 
-    it 'should detect string' do
+    it 'detects string' do
       expect(rescue_call.rescue_classes).to eq(Sexp.new(:NoMethodError))
     end
   end
@@ -39,15 +41,15 @@ describe Fastererer::RescueCall do
   describe 'rescue call with variable' do
     let(:file_name) { 'rescue_with_variable.rb' }
 
-    it 'should detect variable' do
-      expect(rescue_call.rescue_classes).to eq(Sexp.new())
+    it 'detects variable' do
+      expect(rescue_call.rescue_classes).to eq(Sexp.new)
     end
   end
 
   describe 'rescue call with multiple classes' do
     let(:file_name) { 'rescue_with_multiple_classes.rb' }
 
-    it 'should detect method' do
+    it 'detects method' do
       expect(rescue_call.rescue_classes).to eq(Sexp.new(:NoMethodError, :StandardError))
     end
   end
@@ -55,7 +57,7 @@ describe Fastererer::RescueCall do
   describe 'rescue call with multiple classes and variable' do
     let(:file_name) { 'rescue_with_multiple_classes_and_variable.rb' }
 
-    it 'should detect method' do
+    it 'detects method' do
       expect(rescue_call.rescue_classes).to eq(Sexp.new(:NoMethodError, :StandardError))
     end
   end

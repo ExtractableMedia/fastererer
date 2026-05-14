@@ -48,6 +48,7 @@ module Fastererer
     def traverse_tree(sexp_tree, &block)
       sexp_tree.each do |element|
         next unless element.is_a?(Array)
+
         yield element
         traverse_tree(element, &block)
       end
@@ -73,7 +74,7 @@ module Fastererer
     end
 
     def scan_getter_offense
-      return if method_definition.arguments.size > 0
+      return if method_definition.arguments.size.positive?
       return if method_definition.body.size != 1
 
       if method_definition.body.first.sexp_type == :ivar &&

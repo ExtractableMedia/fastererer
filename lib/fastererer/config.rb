@@ -22,6 +22,7 @@ module Fastererer
     def file
       @file ||= begin
         return nil_file if file_location.nil?
+
         # Yaml.load_file returns false if the content is blank
         loaded = YAML.load_file(file_location) || nil_file
         # if the loaded file misses any of the two keys.
