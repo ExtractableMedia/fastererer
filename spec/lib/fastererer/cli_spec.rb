@@ -28,6 +28,6 @@ describe Fastererer::FileTraverser do
   end
 
   def fasterer_bin
-    File.expand_path('../../../../bin/fastererer', __FILE__)
+    File.expand_path('../../../exe/fastererer', __dir__)
   end
 end
