@@ -1,7 +1,6 @@
-# coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'fastererer/version'
+# frozen_string_literal: true
+
+require_relative 'lib/fastererer/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'fastererer'
@@ -18,12 +17,19 @@ Gem::Specification.new do |spec|
   spec.metadata = {
     'source_code_uri' => 'https://github.com/ExtractableMedia/fastererer',
     'bug_tracker_uri' => 'https://github.com/ExtractableMedia/fastererer/issues',
-    'changelog_uri'   => 'https://github.com/ExtractableMedia/fastererer/blob/main/CHANGELOG.md'
+    'changelog_uri' => 'https://github.com/ExtractableMedia/fastererer/blob/main/CHANGELOG.md',
+    'documentation_uri' => 'https://rubydoc.info/gems/fastererer',
+    'rubygems_mfa_required' => 'true'
   }
 
-  spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.files = Dir.chdir(__dir__) do
+    `git ls-files -z`.split("\x0").reject do |f|
+      (File.expand_path(f) == __FILE__) ||
+        f.start_with?(*%w[bin/ spec/ Gemfile .git .rspec .rubocop])
+    end
+  end
+  spec.bindir        = 'exe'
+  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
   spec.required_ruby_version = '>= 3.3'
@@ -31,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ruby_parser', '>= 3.22.0'
 
   spec.add_development_dependency 'bundler', '>= 1.6'
-  spec.add_development_dependency 'pry',     '~> 0.10'
+  spec.add_development_dependency 'debug', '>= 1.10'
   spec.add_development_dependency 'rake',    '>= 12.3.3'
   spec.add_development_dependency 'rspec',   '~> 3.2'
   spec.add_development_dependency 'simplecov', '~> 0.9'

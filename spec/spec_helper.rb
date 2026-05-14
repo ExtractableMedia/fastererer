@@ -7,7 +7,6 @@ end
 
 require 'fastererer'
 require 'fastererer/cli'
-require 'pry'
 
 Dir["#{File.dirname(__FILE__)}/support/*.rb"].each { |f| require f }
 
