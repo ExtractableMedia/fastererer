@@ -9,7 +9,7 @@
     expect(method_call.arguments.count).to eq(1)
     expect(method_call.arguments.first.type).to eq(:symbol_literal)
     expect(method_call.has_block?).to be
-    expect(method_call.receiver).to be_a(Fasterer::VariableReference)
+    expect(method_call.receiver).to be_a(Fastererer::VariableReference)
   end
 
 end
