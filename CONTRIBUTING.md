@@ -22,7 +22,7 @@ When opening an issue, include:
 1. Fork the repository and create a topic branch off `main`.
 2. Run `bin/setup` to install dependencies (or `bundle install` directly).
 3. Add tests that cover the change. Bug fixes should include a regression spec.
-4. Run the test suite with `bundle exec rspec` and make sure it passes.
+4. Run the test suite with `bin/rspec` and make sure it passes.
 5. Update [CHANGELOG.md][changelog] under an unreleased heading describing the change.
 6. Submit the PR with a clear description of what changed and why.
 
@@ -35,7 +35,9 @@ After cloning:
 ```bash
 bin/setup            # installs dependencies
 bin/console          # opens an IRB session with the gem loaded
-bundle exec rspec    # runs the test suite
+bin/rake             # runs the test suite and rubocop (the default task)
+bin/rspec            # runs just the test suite
+bin/rubocop          # runs just the linter
 ```
 
 To try the executable against a Ruby file:
@@ -47,6 +49,7 @@ bundle exec exe/fastererer path/to/file.rb
 ## Code Style
 
 - Follow the [Ruby Style Guide][ruby-style-guide].
+- Run `bin/rubocop` before submitting — CI runs the default rake task on every PR.
 - New Ruby files should start with `# frozen_string_literal: true`.
 - Tests use RSpec — see existing specs in `spec/` for examples and conventions.
 
