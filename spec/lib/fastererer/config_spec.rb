@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'pathname'
 
@@ -18,7 +20,7 @@ describe Fastererer::Config do
 
     it 'returns nil when there is no ancestor file' do
       Dir.tmpdir do
-        expect(described_class.new.file_location).to be nil
+        expect(described_class.new.file_location).to be_nil
       end
     end
   end

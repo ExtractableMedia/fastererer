@@ -1,12 +1,15 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Fastererer::FileTraverser do
   include FileHelper
+
   include_context 'isolated environment'
 
   describe 'config_file' do
     context 'with no config file' do
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+      let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
         expect(file_traverser.config_file)
@@ -15,11 +18,11 @@ describe Fastererer::FileTraverser do
     end
 
     context 'with empty config file' do
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, '')
       end
 
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+      let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
         expect(file_traverser.config_file)
@@ -28,12 +31,12 @@ describe Fastererer::FileTraverser do
     end
 
     context 'missing exclude_paths key' do
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     ['speedups:'])
       end
 
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+      let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
         expect(file_traverser.config_file)
@@ -43,16 +46,15 @@ describe Fastererer::FileTraverser do
 
     context 'with speedups content but no exclude_paths' do
       let(:config_file_content) do
-        "speedups:\n"\
-        '  keys_each_vs_each_key: true'
+        "speedups:\n  " \
+          'keys_each_vs_each_key: true'
       end
+      let(:file_traverser) { described_class.new('.') }
 
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     config_file_content)
       end
-
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
 
       it 'returns config_file with added exclude paths key' do
         expect(file_traverser.config_file)
@@ -63,16 +65,15 @@ describe Fastererer::FileTraverser do
 
     context 'with exclude_paths content but no speedups' do
       let(:config_file_content) do
-        "exclude_paths:\n"\
-        "  - 'spec/support/analyzer/*.rb'"
+        "exclude_paths:\n  " \
+          "- 'spec/support/analyzer/*.rb'"
       end
+      let(:file_traverser) { described_class.new('.') }
 
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     config_file_content)
       end
-
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
 
       it 'returns config_file with added speedups key' do
         expect(file_traverser.config_file)
@@ -83,18 +84,17 @@ describe Fastererer::FileTraverser do
 
     context 'with exclude_paths and speedups content' do
       let(:config_file_content) do
-        "speedups:\n"\
-        "  keys_each_vs_each_key: true\n"\
-        "exclude_paths:\n"\
-        "  - 'spec/support/analyzer/*.rb'"
+        "speedups:\n  " \
+          "keys_each_vs_each_key: true\n" \
+          "exclude_paths:\n  " \
+          "- 'spec/support/analyzer/*.rb'"
       end
+      let(:file_traverser) { described_class.new('.') }
 
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     config_file_content)
       end
-
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
 
       it 'returns config_file' do
         expect(file_traverser.config_file)
@@ -104,14 +104,14 @@ describe Fastererer::FileTraverser do
     end
 
     context 'with empty values' do
-      before(:each) do
+      before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     ['speedups:',
                      '',
                      'exclude_paths:'])
       end
 
-      let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+      let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
         expect(file_traverser.config_file)
@@ -121,7 +121,7 @@ describe Fastererer::FileTraverser do
   end
 
   describe 'scannable files' do
-    let(:file_traverser) { Fastererer::FileTraverser.new(argument) }
+    let(:file_traverser) { described_class.new(argument) }
 
     describe 'with no ARGV' do
       let(:argument) { '.' }
@@ -158,11 +158,11 @@ describe Fastererer::FileTraverser do
         let(:file_name) { 'something.rb' }
 
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - '#{file_name}'"
+          "exclude_paths:\n  " \
+            "- '#{file_name}'"
         end
 
-        before(:each) do
+        before do
           create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                       config_file_content)
 
@@ -178,11 +178,11 @@ describe Fastererer::FileTraverser do
         let(:file_name) { 'something.rb' }
 
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'sumthing.rb'"
+          "exclude_paths:\n  " \
+            "- 'sumthing.rb'"
         end
 
-        before(:each) do
+        before do
           create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content)
           create_file(file_name)
         end
@@ -193,24 +193,24 @@ describe Fastererer::FileTraverser do
       end
 
       context 'nested ruby files' do
-        before(:each) do
+        before do
           create_file('something.rb')
           create_file('nested/something.rb')
         end
 
         it 'returns files properly' do
           expect(file_traverser.scannable_files)
-            .to match_array(['something.rb', 'nested/something.rb'])
+            .to contain_exactly('something.rb', 'nested/something.rb')
         end
       end
 
       context 'ruby files but nested ignored explicitly' do
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'nested/something.rb'"
+          "exclude_paths:\n  " \
+            "- 'nested/something.rb'"
         end
 
-        before(:each) do
+        before do
           create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content)
           create_file('something.rb')
           create_file('nested/something.rb')
@@ -218,17 +218,17 @@ describe Fastererer::FileTraverser do
 
         it 'returns unignored files' do
           expect(file_traverser.scannable_files)
-            .to match_array(['something.rb'])
+            .to contain_exactly('something.rb')
         end
       end
 
       context 'ruby files but nested ignored with *' do
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'nested/*'"
+          "exclude_paths:\n  " \
+            "- 'nested/*'"
         end
 
-        before(:each) do
+        before do
           create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content)
           create_file('something.rb')
           create_file('nested/something.rb')
@@ -236,24 +236,24 @@ describe Fastererer::FileTraverser do
 
         it 'returns unignored files' do
           expect(file_traverser.scannable_files)
-            .to match_array(['something.rb'])
+            .to contain_exactly('something.rb')
         end
       end
 
       context 'ruby files but unnested ignored' do
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'something.rb'"
+          "exclude_paths:\n  " \
+            "- 'something.rb'"
         end
 
-        before(:each) do
+        before do
           create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content)
           create_file('something.rb')
           create_file('nested/something.rb')
         end
 
         it 'returns unignored files' do
-          expect(file_traverser.scannable_files).to match_array(['nested/something.rb'])
+          expect(file_traverser.scannable_files).to contain_exactly('nested/something.rb')
         end
       end
     end
@@ -267,14 +267,14 @@ describe Fastererer::FileTraverser do
         end
 
         it 'returns that file' do
-          expect(file_traverser.scannable_files).to match_array([argument])
+          expect(file_traverser.scannable_files).to contain_exactly(argument)
         end
       end
 
       context 'and config file ignoring it' do
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'something.rb'"
+          "exclude_paths:\n  " \
+            "- 'something.rb'"
         end
 
         before do
@@ -283,7 +283,7 @@ describe Fastererer::FileTraverser do
         end
 
         it 'returns empty array' do
-          expect(file_traverser.scannable_files).to match_array([])
+          expect(file_traverser.scannable_files).to be_empty
         end
       end
     end
@@ -305,8 +305,8 @@ describe Fastererer::FileTraverser do
 
       context 'and config file ignoring it' do
         let(:config_file_content) do
-          "exclude_paths:\n"\
-          "  - 'nested/*'"
+          "exclude_paths:\n  " \
+            "- 'nested/*'"
         end
 
         before do
@@ -315,7 +315,7 @@ describe Fastererer::FileTraverser do
         end
 
         it 'returns empty array' do
-          expect(file_traverser.scannable_files).to match_array([])
+          expect(file_traverser.scannable_files).to be_empty
         end
       end
     end
@@ -327,9 +327,9 @@ describe Fastererer::FileTraverser do
       file_traverser.traverse
     end
 
-    let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+    let(:file_traverser) { described_class.new('.') }
 
-    it 'should have errors' do
+    it 'has errors' do
       expect(file_traverser.parse_error_paths.first)
         .to start_with('user.rb - RubyParser::SyntaxError - unterminated')
     end
@@ -338,16 +338,16 @@ describe Fastererer::FileTraverser do
   describe 'output' do
     let(:test_file_path) { RSpec.root.join('support', 'output', 'sample_code.rb') }
     let(:analyzer) { Fastererer::Analyzer.new(test_file_path) }
-    let(:file_traverser) { Fastererer::FileTraverser.new('.') }
+    let(:file_traverser) { described_class.new('.') }
 
     before do
       analyzer.scan
     end
 
-    context "when print offenses" do
+    context 'when print offenses' do
       let(:explanation) { Fastererer::Offense::EXPLANATIONS[:for_loop_vs_each] }
 
-      it 'should print offense' do
+      it 'prints offense' do
         match = "\e[31m#{test_file_path}:1\e[0m #{explanation}.\n\n"
 
         expect { file_traverser.send(:output, analyzer) }.to output(match).to_stdout

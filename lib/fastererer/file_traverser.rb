@@ -13,8 +13,7 @@ module Fastererer
     SPEEDUPS_KEY      = Config::SPEEDUPS_KEY
     EXCLUDE_PATHS_KEY = Config::EXCLUDE_PATHS_KEY
 
-    attr_reader :config
-    attr_reader :parse_error_paths
+    attr_reader :config, :parse_error_paths
     attr_accessor :offenses_total_count
 
     def initialize(path)
@@ -152,26 +151,33 @@ module Fastererer
     end
 
     def inspected_files_output
-      Painter.paint("#{@files_inspected_count} #{pluralize(@files_inspected_count, 'file')} inspected", :green)
+      Painter.paint(
+        "#{@files_inspected_count} #{pluralize(@files_inspected_count, 'file')} inspected", :green
+      )
     end
 
     def offenses_found_output
       color = @offenses_found_count.zero? ? :green : :red
 
-      Painter.paint("#{@offenses_found_count} #{pluralize(@offenses_found_count, 'offense')} detected", color)
+      Painter.paint(
+        "#{@offenses_found_count} #{pluralize(@offenses_found_count, 'offense')} detected", color
+      )
     end
 
     def unparsable_files_output
       return if @unparsable_files_count.zero?
 
-      Painter.paint("#{@unparsable_files_count} unparsable #{pluralize(@unparsable_files_count, 'file')} found", :red)
+      Painter.paint(
+        "#{@unparsable_files_count} unparsable #{pluralize(@unparsable_files_count, 'file')} found",
+        :red
+      )
     end
 
     def pluralize(n, singular, plural = nil)
       if n == 1
-        "#{singular}"
+        singular.to_s
       elsif plural
-        "#{plural}"
+        plural.to_s
       else
         "#{singular}s"
       end

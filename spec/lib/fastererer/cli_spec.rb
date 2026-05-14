@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Fastererer::FileTraverser do
   include FileHelper
+
   include_context 'isolated environment'
 
   describe 'exit status should be' do

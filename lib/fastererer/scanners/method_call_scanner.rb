@@ -71,9 +71,9 @@ module Fastererer
     end
 
     def check_sort_offense
-      if method_call.arguments.count > 0 || method_call.has_block?
-        add_offense(:sort_vs_sort_by)
-      end
+      return unless method_call.arguments.any? || method_call.has_block?
+
+      add_offense(:sort_vs_sort_by)
     end
 
     def check_each_with_index_offense
@@ -88,7 +88,7 @@ module Fastererer
         add_offense(:shuffle_first_vs_sample)
       when :select
         return unless method_call.receiver.has_block?
-        return if method_call.arguments.count > 0
+        return if method_call.arguments.any?
 
         add_offense(:select_first_vs_detect)
       end
@@ -101,9 +101,7 @@ module Fastererer
       when :reverse
         add_offense(:reverse_each_vs_reverse_each)
       when :keys
-        if method_call.receiver.arguments.count.zero?
-          add_offense(:keys_each_vs_each_key)
-        end
+        add_offense(:keys_each_vs_each_key) if method_call.receiver.arguments.none?
       end
     end
 
@@ -111,7 +109,7 @@ module Fastererer
       return method_call unless method_call.receiver.is_a?(MethodCall)
 
       if method_call.receiver.name == :map &&
-         method_call.arguments.count == 1 &&
+         method_call.arguments.one? &&
          method_call.arguments.first.value == 1
 
         add_offense(:map_flatten_vs_flat_map)
@@ -119,22 +117,22 @@ module Fastererer
     end
 
     def check_fetch_offense
-      if method_call.arguments.count == 2 && !method_call.has_block?
-        add_offense(:fetch_with_argument_vs_block)
-      end
+      return unless method_call.arguments.count == 2 && !method_call.has_block?
+
+      add_offense(:fetch_with_argument_vs_block)
     end
 
     # Need to refactor, fukken complicated conditions.
     def check_symbol_to_proc
-      return unless method_call.block_argument_names.count == 1
+      return unless method_call.block_argument_names.one?
       return if method_call.block_body.nil?
       return unless method_call.block_body.sexp_type == :call
-      return if method_call.arguments.count > 0
+      return if method_call.arguments.any?
       return if method_call.lambda_literal?
 
       body_method_call = MethodCall.new(method_call.block_body)
 
-      return unless body_method_call.arguments.count.zero?
+      return unless body_method_call.arguments.none?
       return if body_method_call.has_block?
       return if body_method_call.receiver.nil?
       return if body_method_call.receiver.is_a?(Fastererer::Primitive)
@@ -144,14 +142,15 @@ module Fastererer
     end
 
     def check_merge_bang_offense
-      return unless method_call.arguments.count == 1
+      return unless method_call.arguments.one?
 
       first_argument = method_call.arguments.first
       return unless first_argument.type == :hash
 
-      if first_argument.element.drop(1).count == 2 # each key and value is an item by itself.
-        add_offense(:hash_merge_bang_vs_hash_brackets)
-      end
+      # each key and value is an item by itself.
+      return unless first_argument.element.drop(1).count == 2
+
+      add_offense(:hash_merge_bang_vs_hash_brackets)
     end
 
     def check_last_offense
@@ -159,16 +158,16 @@ module Fastererer
 
       case method_call.receiver.name
       when :select
-        return if method_call.arguments.count > 0
+        return if method_call.arguments.any?
 
         add_offense(:select_last_vs_reverse_detect)
       end
     end
 
     def check_range_include_offense
-      if method_call.receiver.is_a?(Primitive) && method_call.receiver.range?
-        add_offense(:include_vs_cover_on_range)
-      end
+      return unless method_call.receiver.is_a?(Primitive) && method_call.receiver.range?
+
+      add_offense(:include_vs_cover_on_range)
     end
   end
 end

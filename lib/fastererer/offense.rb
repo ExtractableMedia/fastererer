@@ -4,8 +4,8 @@ module Fastererer
   class Offense
     attr_reader :offense_name, :line_number
 
-    alias_method :name, :offense_name
-    alias_method :line, :line_number
+    alias name offense_name
+    alias line line_number
 
     def initialize(offense_name, line_number)
       @offense_name = offense_name
@@ -74,6 +74,6 @@ module Fastererer
 
       include_vs_cover_on_range:
         'Use #cover? instead of #include? on ranges'
-    }
+    }.freeze
   end
 end

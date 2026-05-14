@@ -12,7 +12,7 @@ require 'fastererer/scanners/method_definition_scanner'
 module Fastererer
   class Analyzer
     attr_reader :file_path
-    alias_method :path, :file_path
+    alias path file_path
 
     def initialize(file_path)
       @file_path = file_path.to_s
@@ -64,17 +64,17 @@ module Fastererer
     def scan_method_definitions(element)
       method_definition_scanner = MethodDefinitionScanner.new(element)
 
-      if method_definition_scanner.offense_detected?
-        errors.push(method_definition_scanner.offense)
-      end
+      return unless method_definition_scanner.offense_detected?
+
+      errors.push(method_definition_scanner.offense)
     end
 
     def scan_method_calls(element)
       method_call_scanner = MethodCallScanner.new(element)
 
-      if method_call_scanner.offense_detected?
-        errors.push(method_call_scanner.offense)
-      end
+      return unless method_call_scanner.offense_detected?
+
+      errors.push(method_call_scanner.offense)
     end
 
     def scan_for_loop(element)
@@ -84,9 +84,9 @@ module Fastererer
     def scan_rescue(element)
       rescue_call_scanner = RescueCallScanner.new(element)
 
-      if rescue_call_scanner.offense_detected?
-        errors.push(rescue_call_scanner.offense)
-      end
+      return unless rescue_call_scanner.offense_detected?
+
+      errors.push(rescue_call_scanner.offense)
     end
   end
 end
