@@ -38,13 +38,6 @@ Metrics/PerceivedComplexity:
   Exclude:
     - 'lib/fastererer/scanners/method_call_scanner.rb'
 
-# Offense count: 1
-# Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
-# AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
-Naming/MethodParameterName:
-  Exclude:
-    - 'lib/fastererer/file_traverser.rb'
-
 # Offense count: 31
 # Configuration parameters: Max, AllowedGroups.
 RSpec/NestedGroups:
