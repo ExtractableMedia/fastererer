@@ -15,7 +15,6 @@ AllCops:
   DisplayStyleGuide: true
   Exclude:
     - 'spec/support/**/*'
-    - 'spec/spec_helper.rb'
 
 Layout/LineLength:
   Max: 100
