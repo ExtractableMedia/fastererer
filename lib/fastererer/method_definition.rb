@@ -2,7 +2,8 @@
 
 module Fastererer
   class MethodDefinition
-    attr_reader :element, :method_name, :block_argument_name, :body, :arguments # for testing purposes
+    # Exposed for testing purposes.
+    attr_reader :element, :method_name, :block_argument_name, :body, :arguments
 
     alias name method_name
 
