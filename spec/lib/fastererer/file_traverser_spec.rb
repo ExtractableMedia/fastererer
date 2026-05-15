@@ -18,9 +18,7 @@ describe Fastererer::FileTraverser do
     end
 
     context 'with empty config file' do
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, '')
-      end
+      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, '') }
 
       let(:file_traverser) { described_class.new('.') }
 
@@ -31,10 +29,7 @@ describe Fastererer::FileTraverser do
     end
 
     context 'with missing exclude_paths key' do
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    ['speedups:'])
-      end
+      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, ['speedups:']) }
 
       let(:file_traverser) { described_class.new('.') }
 
@@ -51,15 +46,11 @@ describe Fastererer::FileTraverser do
       end
       let(:file_traverser) { described_class.new('.') }
 
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    config_file_content)
-      end
+      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
 
       it 'returns config_file with added exclude paths key' do
         expect(file_traverser.config_file)
-          .to eq('speedups' => { 'keys_each_vs_each_key' => true },
-                 'exclude_paths' => [])
+          .to eq('speedups' => { 'keys_each_vs_each_key' => true }, 'exclude_paths' => [])
       end
     end
 
@@ -70,15 +61,11 @@ describe Fastererer::FileTraverser do
       end
       let(:file_traverser) { described_class.new('.') }
 
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    config_file_content)
-      end
+      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
 
       it 'returns config_file with added speedups key' do
         expect(file_traverser.config_file)
-          .to eq('speedups' => {},
-                 'exclude_paths' => ['spec/support/analyzer/*.rb'])
+          .to eq('speedups' => {}, 'exclude_paths' => ['spec/support/analyzer/*.rb'])
       end
     end
 
@@ -91,10 +78,7 @@ describe Fastererer::FileTraverser do
       end
       let(:file_traverser) { described_class.new('.') }
 
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    config_file_content)
-      end
+      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
 
       it 'returns config_file' do
         expect(file_traverser.config_file)
@@ -106,9 +90,7 @@ describe Fastererer::FileTraverser do
     context 'with empty values' do
       before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    ['speedups:',
-                     '',
-                     'exclude_paths:'])
+                    ['speedups:', '', 'exclude_paths:'])
       end
 
       let(:file_traverser) { described_class.new('.') }
@@ -133,9 +115,7 @@ describe Fastererer::FileTraverser do
       end
 
       context 'with only a non-ruby file inside' do
-        before do
-          create_file('something.yml')
-        end
+        before { create_file('something.yml') }
 
         it 'returns empty array' do
           expect(file_traverser.scannable_files).to eq([])
@@ -145,9 +125,7 @@ describe Fastererer::FileTraverser do
       context 'with a ruby file inside' do
         let(:file_name) { 'something.rb' }
 
-        before do
-          create_file(file_name)
-        end
+        before { create_file(file_name) }
 
         it 'returns array with that file inside' do
           expect(file_traverser.scannable_files).to eq([file_name])
@@ -163,9 +141,7 @@ describe Fastererer::FileTraverser do
         end
 
         before do
-          create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                      config_file_content)
-
+          create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content)
           create_file(file_name)
         end
 
@@ -262,9 +238,7 @@ describe Fastererer::FileTraverser do
       let(:argument) { 'something.rb' }
 
       context 'without a config file' do
-        before do
-          create_file('something.rb')
-        end
+        before { create_file('something.rb') }
 
         it 'returns that file' do
           expect(file_traverser.scannable_files).to contain_exactly(argument)
@@ -294,9 +268,7 @@ describe Fastererer::FileTraverser do
       let(:file_names) { ['nested/something.rb', 'nested/something_else.rb'] }
 
       context 'without a config file' do
-        before do
-          file_names.each { |file_name| create_file(file_name) }
-        end
+        before { file_names.each { |file_name| create_file(file_name) } }
 
         it 'returns those files' do
           expect(file_traverser.scannable_files).to match_array(file_names)
@@ -340,9 +312,7 @@ describe Fastererer::FileTraverser do
     let(:analyzer) { Fastererer::Analyzer.new(test_file_path) }
     let(:file_traverser) { described_class.new('.') }
 
-    before do
-      analyzer.scan
-    end
+    before { analyzer.scan }
 
     context 'when print offenses' do
       let(:explanation) { Fastererer::Offense::EXPLANATIONS[:for_loop_vs_each] }
