@@ -12,8 +12,7 @@ describe Fastererer::FileTraverser do
       let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
-        expect(file_traverser.config_file)
-          .to eq(file_traverser.send(:nil_config_file))
+        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
       end
     end
 
@@ -23,8 +22,7 @@ describe Fastererer::FileTraverser do
       let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
-        expect(file_traverser.config_file)
-          .to eq(file_traverser.send(:nil_config_file))
+        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
       end
     end
 
@@ -34,8 +32,7 @@ describe Fastererer::FileTraverser do
       let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
-        expect(file_traverser.config_file)
-          .to eq(file_traverser.send(:nil_config_file))
+        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
       end
     end
 
@@ -96,8 +93,7 @@ describe Fastererer::FileTraverser do
       let(:file_traverser) { described_class.new('.') }
 
       it 'returns nil_config_file' do
-        expect(file_traverser.config_file)
-          .to eq(file_traverser.send(:nil_config_file))
+        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
       end
     end
   end
@@ -105,9 +101,10 @@ describe Fastererer::FileTraverser do
   describe 'scannable files' do
     let(:file_traverser) { described_class.new(argument) }
 
-    describe 'with no ARGV' do
+    context 'with no ARGV' do
       let(:argument) { '.' }
 
+      # rubocop:disable RSpec/NestedGroups
       context 'when no files in folder' do
         it 'returns empty array' do
           expect(file_traverser.scannable_files).to eq([])
@@ -193,8 +190,7 @@ describe Fastererer::FileTraverser do
         end
 
         it 'returns unignored files' do
-          expect(file_traverser.scannable_files)
-            .to contain_exactly('something.rb')
+          expect(file_traverser.scannable_files).to contain_exactly('something.rb')
         end
       end
 
@@ -211,8 +207,7 @@ describe Fastererer::FileTraverser do
         end
 
         it 'returns unignored files' do
-          expect(file_traverser.scannable_files)
-            .to contain_exactly('something.rb')
+          expect(file_traverser.scannable_files).to contain_exactly('something.rb')
         end
       end
 
@@ -232,11 +227,13 @@ describe Fastererer::FileTraverser do
           expect(file_traverser.scannable_files).to contain_exactly('nested/something.rb')
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'with one file argument' do
+    context 'with one file argument' do
       let(:argument) { 'something.rb' }
 
+      # rubocop:disable RSpec/NestedGroups
       context 'without a config file' do
         before { create_file('something.rb') }
 
@@ -260,13 +257,15 @@ describe Fastererer::FileTraverser do
           expect(file_traverser.scannable_files).to be_empty
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'with one folder argument' do
+    context 'with one folder argument' do
       let(:argument) { 'nested/' }
 
       let(:file_names) { ['nested/something.rb', 'nested/something_else.rb'] }
 
+      # rubocop:disable RSpec/NestedGroups
       context 'without a config file' do
         before { file_names.each { |file_name| create_file(file_name) } }
 
@@ -290,6 +289,7 @@ describe Fastererer::FileTraverser do
           expect(file_traverser.scannable_files).to be_empty
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
   end
 

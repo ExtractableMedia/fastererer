@@ -7,9 +7,10 @@ describe Fastererer::MethodCall do
 
   let(:method_call) { described_class.new(call_element) }
 
-  describe 'with explicit receiver' do
-    describe 'without arguments, without block, called with parentheses' do
-      describe 'method call on a constant' do
+  context 'with explicit receiver' do
+    context 'without arguments, without block, called with parentheses' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'when the receiver is a constant' do
         let(:code) { 'User.hello()' }
 
         # This is where the :call token will be recognized.
@@ -21,7 +22,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a integer' do
+      context 'when the receiver is an integer' do
         let(:code) { '1.hello()' }
 
         # This is where the :call token will be recognized.
@@ -33,7 +34,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a string' do
+      context 'when the receiver is a string' do
         let(:code) { "'hello'.hello()" }
 
         let(:call_element) { ripper }
@@ -44,7 +45,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a variable' do
+      context 'when the receiver is a variable' do
         let(:code) do
           "number_one = 1\n" \
             'number_one.hello()'
@@ -60,7 +61,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a method' do
+      context 'when the receiver is a method call' do
         let(:code) { '1.hi(2).hello()' }
 
         let(:call_element) { ripper }
@@ -72,10 +73,12 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments).to be_empty
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'without arguments, without block, called without parentheses' do
-      describe 'method call on a constant' do
+    context 'without arguments, without block, called without parentheses' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'when the receiver is a constant' do
         let(:code) { 'User.hello' }
 
         let(:call_element) { ripper }
@@ -86,7 +89,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a integer' do
+      context 'when the receiver is an integer' do
         let(:code) { '1.hello' }
 
         # This is where the :call token will be recognized.
@@ -98,7 +101,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a string' do
+      context 'when the receiver is a string' do
         let(:code) { "'hello'.hello" }
 
         let(:call_element) { ripper }
@@ -109,7 +112,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a variable' do
+      context 'when the receiver is a variable' do
         let(:code) do
           "number_one = 1\n" \
             'number_one.hello'
@@ -125,7 +128,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'method call on a method' do
+      context 'when the receiver is a method call' do
         let(:code) { '1.hi(2).hello' }
 
         let(:call_element) { ripper }
@@ -137,10 +140,12 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments).to be_empty
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'with do end block' do
-      describe 'and no arguments, without block parameter' do
+    context 'with a "do end" block' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'with no arguments and without a block parameter' do
         let(:code) do
           <<-CODE
             number_one.fetch do
@@ -161,7 +166,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'and no arguments, with one block parameter' do
+      context 'with no arguments and one block parameter' do
         let(:code) do
           <<-CODE
             number_one.fetch do |el|
@@ -182,7 +187,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'and no arguments, with multiple block parameters' do
+      context 'with no arguments and multiple block parameters' do
         let(:code) do
           <<-CODE
             number_one.fetch do |el, tip|
@@ -203,7 +208,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'and one argument within parentheses' do
+      context 'with one argument within parentheses' do
         let(:code) do
           <<-CODE
             number_one = 1
@@ -223,10 +228,12 @@ describe Fastererer::MethodCall do
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'with curly block' do
-      describe 'in one line' do
+    context 'with a curly block' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'when written on one line' do
         let(:code) do
           <<-CODE
             number_one = 1
@@ -244,7 +251,7 @@ describe Fastererer::MethodCall do
         end
       end
 
-      describe 'multi lined' do
+      context 'when written across multiple lines' do
         let(:code) do
           <<-CODE
             number_one = 1
@@ -264,10 +271,12 @@ describe Fastererer::MethodCall do
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'with arguments, without block, called with parentheses' do
-      describe 'method call with an argument' do
+    context 'with arguments, without block, called with parentheses' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'with one argument' do
         let(:code) { '{}.fetch(:writing)' }
 
         let(:call_element) { ripper }
@@ -278,10 +287,12 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments.first.type).to eq(:lit)
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
 
-    describe 'arguments without parenthesis' do
-      describe 'method call with an argument' do
+    context 'with arguments, without block, called without parentheses' do
+      # rubocop:disable RSpec/NestedGroups
+      context 'with two arguments' do
         let(:code) { '{}.fetch :writing, :listening' }
 
         let(:call_element) { ripper }
@@ -293,10 +304,11 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments[1].type).to eq(:lit)
         end
       end
+      # rubocop:enable RSpec/NestedGroups
     end
   end
 
-  describe 'method call with an argument and a block' do
+  context 'with an argument and a block' do
     let(:code) do
       <<-CODE
         number_one = 1
@@ -315,7 +327,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call without an explicit receiver' do
+  context 'without an explicit receiver' do
     let(:code) { 'fetch(:writing, :listening)' }
 
     let(:call_element) { ripper }
@@ -329,7 +341,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call without an explicit receiver and without brackets' do
+  context 'without an explicit receiver and without brackets' do
     let(:code) { 'fetch :writing, :listening' }
 
     let(:call_element) { ripper }
@@ -343,7 +355,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call without an explicit receiver and without brackets and do end' do
+  context 'without an explicit receiver, without brackets, and with "do end"' do
     let(:code) do
       <<-CODE
         "fetch :writing do\n"\
@@ -362,7 +374,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call with two arguments' do
+  context 'with two arguments' do
     let(:code) do
       "number_one = 1\n" \
         'number_one.fetch(:writing, :zumba)'
@@ -379,7 +391,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call with a regex argument' do
+  context 'with a regex argument' do
     let(:code) { '{}.fetch(/.*/)' }
 
     let(:call_element) { ripper }
@@ -392,7 +404,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call with a integer argument' do
+  context 'with an integer argument' do
     let(:code) { '[].flatten(1)' }
 
     let(:call_element) { ripper }
@@ -405,7 +417,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call with symbol to proc argument' do
+  context 'with a symbol-to-proc argument' do
     let(:code) { '[].select(&:zero?)' }
 
     let(:call_element) { ripper }
@@ -418,7 +430,7 @@ describe Fastererer::MethodCall do
     end
   end
 
-  describe 'method call with equals operator' do
+  context 'with an equals operator' do
     let(:code) { 'method_call_with_equals.rb' }
 
     let(:call_element) { ripper.drop(1).first.first[1] }
@@ -431,7 +443,7 @@ describe Fastererer::MethodCall do
   end
 
   describe '#lambda_literal?' do
-    describe 'lambda literal without arguments' do
+    context 'with a lambda literal without arguments' do
       let(:code) { '-> {}' }
 
       let(:call_element) { ripper }
@@ -441,7 +453,7 @@ describe Fastererer::MethodCall do
       end
     end
 
-    describe 'lambda literal with an argument' do
+    context 'with a lambda literal with an argument' do
       let(:code) { '->(_) {}' }
 
       let(:call_element) { ripper }
@@ -451,7 +463,7 @@ describe Fastererer::MethodCall do
       end
     end
 
-    describe 'lambda method' do
+    context 'with the lambda method' do
       let(:code) { 'lambda {}' }
 
       let(:call_element) { ripper }
