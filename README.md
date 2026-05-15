@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/ExtractableMedia/fastererer/actions/workflows/ruby.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ruby.yml)
+[![CI](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml)
 
 # Fastererer
 
