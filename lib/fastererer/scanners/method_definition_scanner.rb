@@ -65,25 +65,30 @@ module Fastererer
       first_argument = method_definition.arguments.first
       return if first_argument.type != :regular_argument
 
+      add_offense(:setter_vs_attr_writer) if trivial_setter?(first_argument)
+    end
+
+    def trivial_setter?(first_argument)
+      body_first = method_definition.body.first
       expected_ivar = "@#{method_definition.name.to_s.delete_suffix('=')}"
 
-      if method_definition.body.first.sexp_type == :iasgn &&
-         method_definition.body.first[1].to_s == expected_ivar &&
-         method_definition.body.first[2][1] == first_argument.name
-
-        add_offense(:setter_vs_attr_writer)
-      end
+      body_first.sexp_type == :iasgn &&
+        body_first[1].to_s == expected_ivar &&
+        body_first[2][1] == first_argument.name
     end
 
     def scan_getter_offense
       return if method_definition.arguments.size.positive?
       return if method_definition.body.size != 1
 
-      if method_definition.body.first.sexp_type == :ivar &&
-         method_definition.body.first[1].to_s == "@#{method_definition.name}"
+      add_offense(:getter_vs_attr_reader) if trivial_getter?
+    end
 
-        add_offense(:getter_vs_attr_reader)
-      end
+    def trivial_getter?
+      body_first = method_definition.body.first
+
+      body_first.sexp_type == :ivar &&
+        body_first[1].to_s == "@#{method_definition.name}"
     end
   end
 end
