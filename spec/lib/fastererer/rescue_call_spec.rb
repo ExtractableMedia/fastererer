@@ -10,9 +10,7 @@ describe Fastererer::RescueCall do
     sexpd_file[2]
   end
 
-  let(:rescue_call) do
-    described_class.new(rescue_element)
-  end
+  let(:rescue_call) { described_class.new(rescue_element) }
 
   describe 'plain rescue call' do
     let(:file_name) { 'plain_rescue.rb' }

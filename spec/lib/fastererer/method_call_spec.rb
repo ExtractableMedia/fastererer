@@ -3,13 +3,9 @@
 require 'spec_helper'
 
 describe Fastererer::MethodCall do
-  let(:ripper) do
-    Fastererer::Parser.parse(code)
-  end
+  let(:ripper) { Fastererer::Parser.parse(code) }
 
-  let(:method_call) do
-    described_class.new(call_element)
-  end
+  let(:method_call) { described_class.new(call_element) }
 
   describe 'with explicit receiver' do
     describe 'without arguments, without block, called with parentheses' do
