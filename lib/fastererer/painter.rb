@@ -4,7 +4,8 @@ module Fastererer
   module Painter
     COLOR_CODES = {
       red: 31,
-      green: 32
+      green: 32,
+      magenta: 35
     }.freeze
 
     @disabled = false
