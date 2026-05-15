@@ -25,11 +25,10 @@ Metrics/CyclomaticComplexity:
   Exclude:
     - 'lib/fastererer/scanners/method_call_scanner.rb'
 
-# Offense count: 3
+# Offense count: 2
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
   Exclude:
-    - 'lib/fastererer/analyzer.rb'
     - 'lib/fastererer/scanners/method_call_scanner.rb'
 
 # Offense count: 1
