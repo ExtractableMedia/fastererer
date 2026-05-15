@@ -1,6 +1,6 @@
-[![CI](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml)
-
 # Fastererer
+
+[![CI](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml)
 
 `fastererer` is a maintained fork of [fasterer][fasterer] (originally by
 [Damir Svrtan][damir-svrtan]), updated for Ruby 4.0 and built on the [Prism][prism] parser.
@@ -34,7 +34,7 @@ fastererer
 
 ## Example output
 
-```
+```text
 app/models/post.rb:57 Array#select.first is slower than Array#detect.
 app/models/post.rb:61 Array#select.first is slower than Array#detect.
 
@@ -54,8 +54,8 @@ project, or any ancestor folder.
 
 Options:
 
-  * Turn off speed suggestions
-  * Blacklist files or complete folder paths
+* Turn off speed suggestions
+* Blacklist files or complete folder paths
 
 Example:
 
@@ -101,7 +101,7 @@ Existing projects migrating from `fasterer` should:
 2. Rename `.fasterer.yml` to `.fastererer.yml`
 3. Update CI commands from `fasterer` to `fastererer`
 
-## Speedups TODO:
+## Roadmap
 
 4. find vs bsearch
 5. Array#count vs Array#size
