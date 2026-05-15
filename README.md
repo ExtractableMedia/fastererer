@@ -1,36 +1,55 @@
 # Fastererer
 
 [![CI](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtractableMedia/fastererer/actions/workflows/ci.yml)
+[![Gem Version](https://badge.fury.io/rb/fastererer.svg)](https://badge.fury.io/rb/fastererer)
+[![Gem Downloads](https://img.shields.io/gem/dt/fastererer.svg)](https://rubygems.org/gems/fastererer)
 
-`fastererer` is a maintained fork of [fasterer][fasterer] (originally by
-[Damir Svrtan][damir-svrtan]), updated for Ruby 4.0 and built on the [Prism][prism] parser.
+[Roadmap][roadmap-project] |
+[Changelog](./CHANGELOG.md) |
+[Contributing](./CONTRIBUTING.md)
 
-Make your Rubies go faster with this command line tool highly inspired by
-[fast-ruby][fast-ruby] and [Sferik's talk at Baruco Conf][sferik-talk].
+`fastererer` is a static analyzer that suggests speed improvements for Ruby code, inspired by
+[fast-ruby][fast-ruby] and [Sferik's talk at Baruco Conf][sferik-talk]. It's a maintained fork of
+[fasterer][fasterer] with Ruby 3.3+ support and native [Prism][prism] parsing.
 
-Fastererer will suggest some speed improvements which you can check in detail at the
-[fast-ruby repo][fast-ruby].
-
-**Please note** that you shouldn't follow the suggestions blindly. Using a while loop instead of
-a each_with_index probably shouldn't be considered if you're doing a regular Rails project, but
-maybe if you're doing something very speed dependent such as Rack or if you're building your own
-framework, you might consider this speed increase.
-
-
+Suggestions aren't gospel — many trade clarity for marginal speed gains. Use judgment,
+especially in non-performance-critical Rails code; the wins matter most in hot paths like web
+frameworks and request middleware.
 
 ## Installation
+
+Add to your `Gemfile`:
+
+```ruby
+group :development do
+  gem 'fastererer', require: false
+end
+```
+
+Then run `bundle install`. Or install directly:
 
 ```shell
 gem install fastererer
 ```
 
+Fastererer requires Ruby 3.3 or higher.
+
 ## Usage
 
-Run it from the root of your project:
+Run from the root of your project to scan everything:
 
 ```shell
-fastererer
+bundle exec fastererer
 ```
+
+Pass a path to scan a specific file or directory:
+
+```shell
+bundle exec fastererer app/models
+bundle exec fastererer app/models/post.rb
+```
+
+Fastererer exits with status `1` when offenses are found, making it suitable for CI.
 
 ## Example output
 
@@ -45,20 +64,18 @@ test/options_test.rb:84 Hash#merge! with one argument is slower than Hash#[].
 
 test/module_test.rb:272 Don't rescue NoMethodError, rather check with respond_to?.
 
-spec/cache/mem_cache_store_spec.rb:161 Use tr instead of gsub when grepping plain strings.
+spec/cache/mem_cache_store_spec.rb:161 Using tr is faster than gsub when replacing a single character in a string with another single character.
 ```
+
 ## Configuration
 
-Configuration is done through the **.fastererer.yml** file. This can placed in the root of your
-project, or any ancestor folder.
+Configuration lives in a `.fastererer.yml` file at the root of your project (or any ancestor
+directory). It supports two options:
 
-Options:
-
-* Turn off speed suggestions
-* Blacklist files or complete folder paths
+* Turn individual speedup checks off
+* Exclude files or directories
 
 Example:
-
 
 ```yaml
 speedups:
@@ -80,52 +97,69 @@ speedups:
   select_last_vs_reverse_detect: true
   getter_vs_attr_reader: true
   setter_vs_attr_writer: true
+  include_vs_cover_on_range: true
 
 exclude_paths:
   - 'vendor/**/*.rb'
   - 'db/schema.rb'
 ```
 
-## Relationship to fasterer
+## CI integration
 
-`fastererer` is a hard fork of [fasterer][fasterer] at v0.11.0. It carries forward the original
-work and adds:
+Fastererer's non-zero exit status on offenses makes it drop-in for CI. A minimal GitHub Actions
+step:
 
-- Support for Ruby 3.3+ (drops EOL Rubies 2.x, 3.0, 3.1, 3.2) and Ruby 4.0
-- Native [Prism][prism] parsing (replaces the EOL `ruby_parser` dependency)
-- Active maintenance and security updates
+```yaml
+- name: Run fastererer
+  run: bundle exec fastererer
+```
 
-Existing projects migrating from `fasterer` should:
+## Migrating from fasterer
 
-1. Replace `gem 'fasterer'` with `gem 'fastererer'` in their Gemfile
+`fastererer` is a hard fork of [fasterer][fasterer] at v0.11.0. To migrate an existing project:
+
+1. Replace `gem 'fasterer'` with `gem 'fastererer'` in your `Gemfile`
 2. Rename `.fasterer.yml` to `.fastererer.yml`
 3. Update CI commands from `fasterer` to `fastererer`
 
 ## Roadmap
 
-Planned rules not yet implemented:
+Roadmap items are tracked in the [Fastererer Roadmap][roadmap-project] project.
 
-1. `find` vs `bsearch`
-2. `Array#count` vs `Array#size`
-3. `Enumerable#each + push` vs `Enumerable#map`
-4. `Hash#merge` vs `Hash#merge!`
-5. `String#casecmp` vs `String#downcase + ==`
-6. String concatenation
-7. `String#match` vs `String#start_with?` / `String#end_with?`
-8. `String#gsub` vs `String#sub`
+## Questions?
 
-## Contributing
+Have a question? Start a [discussion][discussions] — questions, ideas, and show-and-tell are all
+welcome there.
 
-Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue,
-PR, and local development workflow.
+## Bugs?
+
+Found a bug? [Open an issue][issues] or send a pull request.
+
+## Development
+
+Clone the repo and run `bin/setup` to install dependencies. Run tests with `bin/rspec`. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the full development workflow.
+
+## License
+
+Fastererer is released under the [MIT License](./LICENSE.txt).
 
 ## Code of Conduct
 
 Everyone interacting in this project's codebases, issue trackers, and discussions is expected to
-follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+## Special Thanks
+
+Fastererer carries forward [Damir Svrtan][damir-svrtan]'s [fasterer][fasterer] (v0.11.0 was the
+fork point). Thanks to Damir for the original work, and to the [fast-ruby][fast-ruby] community
+for the idiom catalog that drives the speed checks.
 
 [damir-svrtan]: https://github.com/DamirSvrtan
+[discussions]: https://github.com/ExtractableMedia/fastererer/discussions
 [fast-ruby]: https://github.com/JuanitoFatas/fast-ruby
 [fasterer]: https://github.com/DamirSvrtan/fasterer
+[issues]: https://github.com/ExtractableMedia/fastererer/issues
 [prism]: https://github.com/ruby/prism
+[roadmap-project]: https://github.com/orgs/ExtractableMedia/projects/1
 [sferik-talk]: https://speakerdeck.com/sferik/writing-fast-ruby
