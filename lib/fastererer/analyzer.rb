@@ -34,18 +34,20 @@ module Fastererer
       return unless sexp_tree.is_a?(Sexp)
 
       token = sexp_tree.first
-
       scan_by_token(token, sexp_tree)
 
-      case token
-      when :call, :iter
-        method_call = MethodCall.new(sexp_tree)
-        traverse_sexp_tree(method_call.receiver_element) if method_call.receiver_element
-        traverse_sexp_tree(method_call.arguments_element)
-        traverse_sexp_tree(method_call.block_body) if method_call.block?
+      if %i[call iter].include?(token)
+        descend_into_call(sexp_tree)
       else
         sexp_tree.each { |element| traverse_sexp_tree(element) }
       end
+    end
+
+    def descend_into_call(sexp_tree)
+      method_call = MethodCall.new(sexp_tree)
+      traverse_sexp_tree(method_call.receiver_element) if method_call.receiver_element
+      traverse_sexp_tree(method_call.arguments_element)
+      traverse_sexp_tree(method_call.block_body) if method_call.block?
     end
 
     def scan_by_token(token, element)
