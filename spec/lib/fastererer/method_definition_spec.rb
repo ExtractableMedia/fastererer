@@ -14,7 +14,7 @@ describe Fastererer::MethodDefinition do
 
     it 'does not detect block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(false)
+      expect(method_definition.block?).to be(false)
     end
   end
 
@@ -23,7 +23,7 @@ describe Fastererer::MethodDefinition do
 
     it 'does not detect block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(false)
+      expect(method_definition.block?).to be(false)
     end
   end
 
@@ -32,7 +32,7 @@ describe Fastererer::MethodDefinition do
 
     it 'does not detect block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(false)
+      expect(method_definition.block?).to be(false)
     end
   end
 
@@ -41,7 +41,7 @@ describe Fastererer::MethodDefinition do
 
     it 'detects block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(true)
+      expect(method_definition.block?).to be(true)
       expect(method_definition.block_argument_name).to eq(:block)
     end
   end
@@ -51,7 +51,7 @@ describe Fastererer::MethodDefinition do
 
     it 'detects block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(true)
+      expect(method_definition.block?).to be(true)
       expect(method_definition.block_argument_name).to eq(:block)
     end
   end
@@ -61,7 +61,7 @@ describe Fastererer::MethodDefinition do
 
     it 'detects block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(true)
+      expect(method_definition.block?).to be(true)
       expect(method_definition.block_argument_name).to eq(:block)
     end
   end
@@ -71,7 +71,7 @@ describe Fastererer::MethodDefinition do
 
     it 'does not detect block', :aggregate_failures do
       expect(method_definition.method_name).to eq(:hello)
-      expect(method_definition.has_block?).to be(false)
+      expect(method_definition.block?).to be(false)
     end
   end
 end

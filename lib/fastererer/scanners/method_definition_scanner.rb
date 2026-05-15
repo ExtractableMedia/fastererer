@@ -19,7 +19,7 @@ module Fastererer
     private
 
     def check_offense
-      if method_definition.has_block?
+      if method_definition.block?
         scan_block_call_offense
       else
         scan_getter_and_setter_offense

@@ -15,7 +15,7 @@ module Fastererer
       set_block_argument_name
     end
 
-    def has_block?
+    def block?
       !!@block_argument_name
     end
 

@@ -71,7 +71,7 @@ module Fastererer
     end
 
     def check_sort_offense
-      return unless method_call.arguments.any? || method_call.has_block?
+      return unless method_call.arguments.any? || method_call.block?
 
       add_offense(:sort_vs_sort_by)
     end
@@ -87,7 +87,7 @@ module Fastererer
       when :shuffle
         add_offense(:shuffle_first_vs_sample)
       when :select
-        return unless method_call.receiver.has_block?
+        return unless method_call.receiver.block?
         return if method_call.arguments.any?
 
         add_offense(:select_first_vs_detect)
@@ -117,7 +117,7 @@ module Fastererer
     end
 
     def check_fetch_offense
-      return unless method_call.arguments.count == 2 && !method_call.has_block?
+      return unless method_call.arguments.count == 2 && !method_call.block?
 
       add_offense(:fetch_with_argument_vs_block)
     end
@@ -133,7 +133,7 @@ module Fastererer
       body_method_call = MethodCall.new(method_call.block_body)
 
       return unless body_method_call.arguments.none?
-      return if body_method_call.has_block?
+      return if body_method_call.block?
       return if body_method_call.receiver.nil?
       return if body_method_call.receiver.is_a?(Fastererer::Primitive)
       return if body_method_call.receiver.name != method_call.block_argument_names.first
