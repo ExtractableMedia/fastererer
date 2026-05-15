@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: rubygems
+    permissions:
+      # id-token: write is required for rubygems.org Trusted Publishing OIDC.
+      id-token: write
+      # contents: write is required for rubygems/release-gem to create a
+      # corresponding GitHub Release for the tag.
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - uses: rubygems/release-gem@v1
