@@ -3,10 +3,27 @@
 require 'fastererer/method_call'
 require 'fastererer/offense'
 require 'fastererer/scanners/offensive'
+require 'fastererer/scanners/symbol_to_proc_check'
 
 module Fastererer
   class MethodCallScanner
     include Fastererer::Offensive
+    include Fastererer::SymbolToProcCheck
+
+    CHECKERS = {
+      module_eval: :check_module_eval_offense,
+      gsub: :check_gsub_offense,
+      sort: :check_sort_offense,
+      each_with_index: :check_each_with_index_offense,
+      first: :check_first_offense,
+      each: :check_each_offense,
+      flatten: :check_flatten_offense,
+      fetch: :check_fetch_offense,
+      merge!: :check_merge_bang_offense,
+      last: :check_last_offense,
+      include?: :check_range_include_offense
+    }.freeze
+    private_constant :CHECKERS
 
     attr_reader :element
 
@@ -22,31 +39,8 @@ module Fastererer
     private
 
     def check_offense
-      case method_call.method_name
-      when :module_eval
-        check_module_eval_offense
-      when :gsub
-        check_gsub_offense
-      when :sort
-        check_sort_offense
-      when :each_with_index
-        check_each_with_index_offense
-      when :first
-        check_first_offense
-      when :each
-        check_each_offense
-      when :flatten
-        check_flatten_offense
-      when :fetch
-        check_fetch_offense
-      when :merge!
-        check_merge_bang_offense
-      when :last
-        check_last_offense
-      when :include?
-        check_range_include_offense
-      end
-
+      checker = CHECKERS[method_call.method_name]
+      send(checker) if checker
       check_symbol_to_proc
     end
 
@@ -58,16 +52,15 @@ module Fastererer
     end
 
     def check_gsub_offense
-      first_argument  = method_call.arguments[0]
+      first_argument = method_call.arguments[0]
       second_argument = method_call.arguments[1]
-
       return if first_argument.nil? || second_argument.nil?
 
-      if first_argument.value.is_a?(String) && first_argument.value.size == 1 &&
-         second_argument.value.is_a?(String) && second_argument.value.size == 1
+      add_offense(:gsub_vs_tr) if single_char_strings?(first_argument, second_argument)
+    end
 
-        add_offense(:gsub_vs_tr)
-      end
+    def single_char_strings?(*arguments)
+      arguments.all? { |arg| arg.value.is_a?(String) && arg.value.size == 1 }
     end
 
     def check_sort_offense
@@ -81,7 +74,7 @@ module Fastererer
     end
 
     def check_first_offense
-      return method_call unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.is_a?(MethodCall)
 
       case method_call.receiver.name
       when :shuffle
@@ -95,7 +88,7 @@ module Fastererer
     end
 
     def check_each_offense
-      return method_call unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.is_a?(MethodCall)
 
       case method_call.receiver.name
       when :reverse
@@ -106,14 +99,10 @@ module Fastererer
     end
 
     def check_flatten_offense
-      return method_call unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.name == :map && method_call.arguments.one?
 
-      if method_call.receiver.name == :map &&
-         method_call.arguments.one? &&
-         method_call.arguments.first.value == 1
-
-        add_offense(:map_flatten_vs_flat_map)
-      end
+      add_offense(:map_flatten_vs_flat_map) if method_call.arguments.first.value == 1
     end
 
     def check_fetch_offense
@@ -122,31 +111,11 @@ module Fastererer
       add_offense(:fetch_with_argument_vs_block)
     end
 
-    # Need to refactor, fukken complicated conditions.
-    def check_symbol_to_proc
-      return unless method_call.block_argument_names.one?
-      return if method_call.block_body.nil?
-      return unless method_call.block_body.sexp_type == :call
-      return if method_call.arguments.any?
-      return if method_call.lambda_literal?
-
-      body_method_call = MethodCall.new(method_call.block_body)
-
-      return unless body_method_call.arguments.none?
-      return if body_method_call.block?
-      return if body_method_call.receiver.nil?
-      return if body_method_call.receiver.is_a?(Fastererer::Primitive)
-      return if body_method_call.receiver.name != method_call.block_argument_names.first
-
-      add_offense(:block_vs_symbol_to_proc)
-    end
-
     def check_merge_bang_offense
       return unless method_call.arguments.one?
 
       first_argument = method_call.arguments.first
       return unless first_argument.type == :hash
-
       # each key and value is an item by itself.
       return unless first_argument.element.drop(1).count == 2
 
@@ -154,14 +123,11 @@ module Fastererer
     end
 
     def check_last_offense
-      return method_call unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.is_a?(MethodCall)
+      return unless method_call.receiver.name == :select
+      return if method_call.arguments.any?
 
-      case method_call.receiver.name
-      when :select
-        return if method_call.arguments.any?
-
-        add_offense(:select_last_vs_reverse_detect)
-      end
+      add_offense(:select_last_vs_reverse_detect)
     end
 
     def check_range_include_offense
