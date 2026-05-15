@@ -173,8 +173,8 @@ module Fastererer
       )
     end
 
-    def pluralize(n, singular, plural = nil)
-      if n == 1
+    def pluralize(count, singular, plural = nil)
+      if count == 1
         singular.to_s
       elsif plural
         plural.to_s
