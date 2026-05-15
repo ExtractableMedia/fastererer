@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler/setup'
 require 'simplecov'
 SimpleCov.start do
@@ -23,7 +25,5 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
-  config.before(:each) do
-    allow_any_instance_of(Fastererer::FileTraverser).to receive(:puts).and_return(nil)
-  end
+  config.before { allow($stdout).to receive(:puts) }
 end
