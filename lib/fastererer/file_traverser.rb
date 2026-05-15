@@ -85,7 +85,7 @@ module Fastererer
       severity = Painter.paint('W', :magenta)
 
       offenses_grouped_by_type(analyzer).each do |error_group_name, error_occurences|
-        explanation = Explanation.new(error_group_name)
+        explanation = Explanation.for(error_group_name)
         error_occurences.map(&:line_number).each do |line|
           file_and_line = "#{analyzer.file_path}:#{line}"
           print "#{Painter.paint(file_and_line, :red)}: #{severity}: #{explanation}\n"

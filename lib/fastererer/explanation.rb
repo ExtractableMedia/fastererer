@@ -13,6 +13,11 @@ module Fastererer
       @rules ||= load_rules
     end
 
+    def self.for(offense_name)
+      @instances ||= {}
+      @instances[offense_name.to_sym] ||= new(offense_name)
+    end
+
     def self.validate!(offense_name)
       rules.fetch(offense_name.to_s) do
         raise UnknownRuleError, "Unknown rule: #{offense_name.inspect}"
@@ -34,16 +39,16 @@ module Fastererer
     attr_reader :offense_name
 
     def initialize(offense_name)
-      @offense_name = offense_name
-      @data = self.class.validate!(offense_name)
+      @offense_name = offense_name.to_sym
+      @row = self.class.validate!(@offense_name)
     end
 
     def description
-      @data.fetch('description')
+      row.fetch('description')
     end
 
     def url
-      @data.fetch('url')
+      row.fetch('url')
     end
 
     def rule_name
@@ -51,13 +56,15 @@ module Fastererer
     end
 
     def to_s
-      "#{rule_name}: #{description}. (#{url})"
+      "#{rule_name}: #{description.delete_suffix('.')}. (#{url})"
     end
 
     private
 
+    attr_reader :row
+
     def pascal_case(name)
-      name.to_s.split('_').map(&:capitalize).join
+      name.to_s.split('_').filter_map { |part| part.capitalize unless part.empty? }.join
     end
   end
 end

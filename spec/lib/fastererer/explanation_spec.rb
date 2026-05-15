@@ -31,6 +31,18 @@ describe Fastererer::Explanation do
 
       expect(explanation.rule_name).to eq('Performance/ModuleEval')
     end
+
+    it 'skips empty parts produced by doubled underscores' do
+      explanation = described_class.new(:for_loop_vs_each)
+
+      expect(explanation.send(:pascal_case, :foo__bar)).to eq('FooBar')
+    end
+  end
+
+  describe '#offense_name' do
+    it 'is stored as a symbol when constructed with a string' do
+      expect(described_class.new('for_loop_vs_each').offense_name).to eq(:for_loop_vs_each)
+    end
   end
 
   describe '#to_s' do
@@ -42,11 +54,38 @@ describe Fastererer::Explanation do
         '(https://github.com/JuanitoFatas/fast-ruby#enumerableeach-vs-for-loop-code)'
       )
     end
+
+    it 'does not double-print the period when description already ends with one' do
+      explanation = described_class.new(:for_loop_vs_each)
+      explanation.instance_variable_set(:@row,
+                                        'description' => 'Sample.', 'url' => 'https://example.test/')
+
+      expect(explanation.to_s).to eq('Performance/ForLoopVsEach: Sample. (https://example.test/)')
+    end
   end
 
   describe 'with an unknown rule' do
     it 'raises UnknownRuleError naming the offending key' do
       expect { described_class.new(:no_such_rule) }
+        .to raise_error(described_class::UnknownRuleError, /Unknown rule: :no_such_rule/)
+    end
+  end
+
+  describe '.for' do
+    it 'returns the same instance for the same offense_name' do
+      first = described_class.for(:for_loop_vs_each)
+      second = described_class.for(:for_loop_vs_each)
+
+      expect(first).to be(second)
+    end
+
+    it 'shares the cached instance between symbol and string keys' do
+      expect(described_class.for(:for_loop_vs_each))
+        .to be(described_class.for('for_loop_vs_each'))
+    end
+
+    it 'raises UnknownRuleError on an unknown rule' do
+      expect { described_class.for(:no_such_rule) }
         .to raise_error(described_class::UnknownRuleError, /Unknown rule: :no_such_rule/)
     end
   end
