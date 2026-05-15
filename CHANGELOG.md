@@ -10,6 +10,9 @@ Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior t
 - Module renamed from `Fasterer` to `Fastererer`
 - Add explicit support for Ruby 4.0
 - Drop support for EOL Ruby versions (2.x, 3.0, 3.1, 3.2). The minimum required Ruby version is now 3.3.
+- Add `NO_COLOR` env var and `--no-color` flag to suppress ANSI color output;
+  color also auto-disables when STDOUT isn't a TTY (piped output, CI logs,
+  editor integrations). CLI now supports `--help`/`-h` and `--version`/`-v`.
 
 ## 0.11.0
 

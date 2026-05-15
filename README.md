@@ -114,6 +114,10 @@ step:
   run: bundle exec fastererer
 ```
 
+Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
+[no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output
+(`fastererer | grep`), and editor integrations get plain text without configuration.
+
 ## Migrating from fasterer
 
 `fastererer` is a hard fork of [fasterer][fasterer] at v0.11.0. To migrate an existing project:
