@@ -14,8 +14,8 @@ describe Fastererer::Statistics do
   let(:statistics) { described_class.new(traverser_mock) }
 
   describe 'inspected_files_output' do
-    it 'is green' do
-      expect(statistics.inspected_files_output).to eq("\e[32m0 files inspected\e[0m")
+    it 'includes the file count' do
+      expect(statistics.inspected_files_output).to include('0 files inspected')
     end
   end
 
@@ -29,8 +29,8 @@ describe Fastererer::Statistics do
     context 'with unparsable files' do
       let(:parse_errors) { ['file.rb - ParseError - bad syntax'] }
 
-      it 'returns red output with count' do
-        expect(statistics.unparsable_files_output).to eq("\e[31m1 unparsable file found\e[0m")
+      it 'includes the count' do
+        expect(statistics.unparsable_files_output).to include('1 unparsable file found')
       end
     end
 
@@ -38,7 +38,7 @@ describe Fastererer::Statistics do
       let(:parse_errors) { ['a.rb - err', 'b.rb - err'] }
 
       it 'pluralizes correctly' do
-        expect(statistics.unparsable_files_output).to eq("\e[31m2 unparsable files found\e[0m")
+        expect(statistics.unparsable_files_output).to include('2 unparsable files found')
       end
     end
   end

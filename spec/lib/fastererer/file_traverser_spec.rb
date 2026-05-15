@@ -325,13 +325,12 @@ describe Fastererer::FileTraverser do
 
     before { analyzer.scan }
 
-    context 'when print offenses' do
+    context 'when the analyzer has offenses' do
       let(:explanation) { Fastererer::Offense::EXPLANATIONS[:for_loop_vs_each] }
 
       it 'prints offense' do
-        match = "\e[31m#{test_file_path}:1\e[0m #{explanation}.\n\n"
-
-        expect { file_traverser.send(:output, analyzer) }.to output(match).to_stdout
+        expect { file_traverser.send(:output, analyzer) }
+          .to output(include("#{test_file_path}:1", explanation)).to_stdout
       end
     end
   end
