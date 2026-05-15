@@ -12,7 +12,7 @@ module Fastererer
     def initialize(offense_name, line_number)
       @offense_name = offense_name
       @line_number  = line_number
-      explanation # validate the rule exists eagerly
+      Explanation.validate!(offense_name)
     end
 
     def explanation

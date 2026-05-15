@@ -45,9 +45,68 @@ describe Fastererer::Explanation do
   end
 
   describe 'with an unknown rule' do
-    it 'raises UnknownRuleError' do
+    it 'raises UnknownRuleError naming the offending key' do
       expect { described_class.new(:no_such_rule) }
-        .to raise_error(described_class::UnknownRuleError, /no_such_rule/)
+        .to raise_error(described_class::UnknownRuleError, /Unknown rule: :no_such_rule/)
+    end
+  end
+
+  describe '.validate!' do
+    it 'returns the rule row when the key exists' do
+      expect(described_class.validate!(:for_loop_vs_each)).to include('description', 'url')
+    end
+
+    it 'raises UnknownRuleError without instantiating an Explanation' do
+      expect { described_class.validate!(:no_such_rule) }
+        .to raise_error(described_class::UnknownRuleError, /Unknown rule: :no_such_rule/)
+    end
+  end
+
+  describe '.rules' do
+    it 'returns the same memoized hash on repeated calls' do
+      first_call = described_class.rules
+      second_call = described_class.rules
+
+      expect(first_call).to be(second_call)
+    end
+
+    it 'returns a frozen top-level hash' do
+      expect(described_class.rules).to be_frozen
+    end
+
+    it 'returns frozen row hashes' do
+      expect(described_class.rules.values).to all(be_frozen)
+    end
+
+    it 'returns frozen description and url strings' do
+      strings = described_class.rules.values.flat_map(&:values)
+
+      expect(strings).to all(be_frozen)
+    end
+  end
+
+  describe 'rule catalog' do
+    it 'contains exactly 19 rules' do
+      expect(described_class.rules.size).to eq(19)
+    end
+
+    it 'each rule has a String description' do
+      described_class.rules.each do |key, row|
+        expect(row['description']).to be_a(String), "#{key} description must be a String"
+      end
+    end
+
+    it 'each rule description is non-empty' do
+      described_class.rules.each do |key, row|
+        expect(row['description']).not_to be_empty, "#{key} description is empty"
+      end
+    end
+
+    it 'each rule links to a fast-ruby anchor' do
+      described_class.rules.each do |key, row|
+        expect(row['url']).to start_with('https://github.com/JuanitoFatas/fast-ruby#'),
+                              "#{key} url does not point at fast-ruby: #{row['url'].inspect}"
+      end
     end
   end
 end
