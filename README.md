@@ -157,7 +157,7 @@ for the idiom catalog that drives the speed checks.
 
 [damir-svrtan]: https://github.com/DamirSvrtan
 [discussions]: https://github.com/ExtractableMedia/fastererer/discussions
-[fast-ruby]: https://github.com/JuanitoFatas/fast-ruby
+[fast-ruby]: https://github.com/fastruby/fast-ruby
 [fasterer]: https://github.com/DamirSvrtan/fasterer
 [issues]: https://github.com/ExtractableMedia/fastererer/issues
 [prism]: https://github.com/ruby/prism
