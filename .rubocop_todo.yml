@@ -6,36 +6,6 @@
 # Note that changes in the inspected code, or installation of new
 # versions of RuboCop, may require this file to be generated again.
 
-# Offense count: 3
-# Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
-Metrics/AbcSize:
-  Exclude:
-    - 'lib/fastererer/scanners/method_call_scanner.rb'
-
-# Offense count: 1
-# Configuration parameters: CountComments, Max, CountAsOne.
-Metrics/ClassLength:
-  Exclude:
-    - 'lib/fastererer/scanners/method_call_scanner.rb'
-
-# Offense count: 2
-# Configuration parameters: AllowedMethods, AllowedPatterns, Max.
-Metrics/CyclomaticComplexity:
-  Exclude:
-    - 'lib/fastererer/scanners/method_call_scanner.rb'
-
-# Offense count: 2
-# Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
-Metrics/MethodLength:
-  Exclude:
-    - 'lib/fastererer/scanners/method_call_scanner.rb'
-
-# Offense count: 1
-# Configuration parameters: AllowedMethods, AllowedPatterns, Max.
-Metrics/PerceivedComplexity:
-  Exclude:
-    - 'lib/fastererer/scanners/method_call_scanner.rb'
-
 # Offense count: 31
 # Configuration parameters: Max, AllowedGroups.
 RSpec/NestedGroups:
