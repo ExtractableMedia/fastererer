@@ -77,7 +77,7 @@ module Fastererer
     private
 
     def set_name
-      @name = element.name
+      @name = element.is_a?(Prism::MultiTargetNode) ? nil : element.name
     end
 
     def set_argument_type

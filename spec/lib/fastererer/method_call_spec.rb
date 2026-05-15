@@ -200,6 +200,21 @@ describe Fastererer::MethodCall do
         end
       end
 
+      context 'with a destructured block parameter' do
+        let(:code) do
+          <<~RUBY
+            pairs.each do |(a, b), c|
+              do_something(a, b, c)
+            end
+          RUBY
+        end
+        let(:call_element) { first_statement }
+
+        it 'represents the destructured parameter with nil' do
+          expect(method_call.block_argument_names).to eq([nil, :c])
+        end
+      end
+
       context 'with one argument within parentheses' do
         let(:code) do
           <<~RUBY

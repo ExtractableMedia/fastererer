@@ -106,4 +106,14 @@ describe Fastererer::MethodDefinition do
       expect(arg).not_to be_keyword_argument
     end
   end
+
+  describe 'method with a destructured argument' do
+    let(:file_name) { 'method_with_destructured_argument.rb' }
+
+    it 'represents the destructured argument with a nil name', :aggregate_failures do
+      destructured, regular = method_definition.arguments
+      expect(destructured.name).to be_nil
+      expect(regular.name).to eq(:c)
+    end
+  end
 end

@@ -69,7 +69,9 @@ module Fastererer
         return @block_argument_names = []
       end
 
-      @block_argument_names = params.parameters.requireds.map(&:name)
+      @block_argument_names = params.parameters.requireds.map do |param|
+        param.is_a?(Prism::RequiredParameterNode) ? param.name : nil
+      end
     end
   end
 
