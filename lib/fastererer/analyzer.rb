@@ -42,7 +42,7 @@ module Fastererer
         method_call = MethodCall.new(sexp_tree)
         traverse_sexp_tree(method_call.receiver_element) if method_call.receiver_element
         traverse_sexp_tree(method_call.arguments_element)
-        traverse_sexp_tree(method_call.block_body) if method_call.has_block?
+        traverse_sexp_tree(method_call.block_body) if method_call.block?
       else
         sexp_tree.each { |element| traverse_sexp_tree(element) }
       end

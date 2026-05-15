@@ -155,7 +155,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.block_argument_names).to be_empty
           expect(method_call.receiver).to be_a(described_class)
         end
@@ -176,7 +176,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.block_argument_names).to contain_exactly(:el)
           expect(method_call.receiver).to be_a(described_class)
         end
@@ -197,7 +197,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.block_argument_names).to eq(%i[el tip])
           expect(method_call.receiver).to be_a(described_class)
         end
@@ -219,7 +219,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments.count).to be(1)
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -239,7 +239,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -260,7 +260,7 @@ describe Fastererer::MethodCall do
         it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call).to have_block
+          expect(method_call).to be_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -310,7 +310,7 @@ describe Fastererer::MethodCall do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments.first.type).to eq(:lit)
-      expect(method_call).to have_block
+      expect(method_call).to be_block
       expect(method_call.receiver).to be_a(Fastererer::VariableReference)
     end
   end
@@ -414,7 +414,7 @@ describe Fastererer::MethodCall do
       expect(method_call.method_name).to eq(:select)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments[0].type).to eq(:block_pass)
-      expect(method_call).to have_block
+      expect(method_call).to be_block
     end
   end
 
