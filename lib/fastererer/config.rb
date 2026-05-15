@@ -20,14 +20,9 @@ module Fastererer
     end
 
     def file
-      @file ||= begin
-        return nil_file if file_location.nil?
+      return @file if defined?(@file)
 
-        # Yaml.load_file returns false if the content is blank
-        loaded = YAML.load_file(file_location) || nil_file
-        # if the loaded file misses any of the two keys.
-        loaded.merge!(nil_file) { |_k, v1, v2| v1 || v2 }
-      end
+      @file = load_file
     end
 
     def file_location
@@ -40,6 +35,16 @@ module Fastererer
 
     def nil_file
       { SPEEDUPS_KEY => {}, EXCLUDE_PATHS_KEY => [] }
+    end
+
+    private
+
+    def load_file
+      return nil_file if file_location.nil?
+
+      # YAML.load_file returns false if the content is blank, so coerce to nil_file.
+      loaded = YAML.load_file(file_location) || nil_file
+      loaded.merge!(nil_file) { |_k, v1, v2| v1 || v2 }
     end
   end
 end
