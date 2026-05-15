@@ -56,11 +56,11 @@ module Fastererer
       second_argument = method_call.arguments[1]
       return if first_argument.nil? || second_argument.nil?
 
-      add_offense(:gsub_vs_tr) if single_char_strings?(first_argument, second_argument)
+      add_offense(:gsub_vs_tr) if both_single_char_strings?(first_argument, second_argument)
     end
 
-    def single_char_strings?(*arguments)
-      arguments.all? { |arg| arg.value.is_a?(String) && arg.value.size == 1 }
+    def both_single_char_strings?(first, second)
+      [first, second].all? { |arg| arg.value.is_a?(String) && arg.value.size == 1 }
     end
 
     def check_sort_offense
