@@ -103,14 +103,16 @@ Existing projects migrating from `fasterer` should:
 
 ## Roadmap
 
-4. find vs bsearch
-5. Array#count vs Array#size
-7. Enumerable#each + push vs Enumerable#map
-17. Hash#merge vs Hash#merge!
-20. String#casecmp vs String#downcase + ==
-21. String concatenation
-22. String#match vs String#start_with?/String#end_with?
-23. String#gsub vs String#sub
+Planned rules not yet implemented:
+
+1. `find` vs `bsearch`
+2. `Array#count` vs `Array#size`
+3. `Enumerable#each + push` vs `Enumerable#map`
+4. `Hash#merge` vs `Hash#merge!`
+5. `String#casecmp` vs `String#downcase + ==`
+6. String concatenation
+7. `String#match` vs `String#start_with?` / `String#end_with?`
+8. `String#gsub` vs `String#sub`
 
 ## Contributing
 
