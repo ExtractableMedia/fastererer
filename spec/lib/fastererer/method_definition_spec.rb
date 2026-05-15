@@ -7,9 +7,7 @@ describe Fastererer::MethodDefinition do
     Fastererer::Parser.parse(File.read(RSpec.root.join('support', 'method_definition', file_name)))
   end
 
-  let(:method_definition) do
-    described_class.new(def_element)
-  end
+  let(:method_definition) { described_class.new(def_element) }
 
   describe 'method with no arguments' do
     let(:file_name) { 'simple_method.rb' }
