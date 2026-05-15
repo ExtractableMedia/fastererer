@@ -15,7 +15,7 @@ describe Fastererer::Explanation do
     it 'returns the fast-ruby documentation link' do
       explanation = described_class.new(:select_first_vs_detect)
 
-      expect(explanation.url).to start_with('https://github.com/JuanitoFatas/fast-ruby#')
+      expect(explanation.url).to start_with('https://github.com/fastruby/fast-ruby#')
     end
   end
 
@@ -51,7 +51,7 @@ describe Fastererer::Explanation do
 
       expect(rendered).to eq(
         'Performance/ForLoopVsEach: For loop is slower than using each. ' \
-        '(https://github.com/JuanitoFatas/fast-ruby#enumerableeach-vs-for-loop-code)'
+        '(https://github.com/fastruby/fast-ruby#enumerableeach-vs-for-loop-code)'
       )
     end
 
@@ -143,7 +143,7 @@ describe Fastererer::Explanation do
 
     it 'each rule links to a fast-ruby anchor' do
       described_class.rules.each do |key, row|
-        expect(row['url']).to start_with('https://github.com/JuanitoFatas/fast-ruby#'),
+        expect(row['url']).to start_with('https://github.com/fastruby/fast-ruby#'),
                               "#{key} url does not point at fast-ruby: #{row['url'].inspect}"
       end
     end

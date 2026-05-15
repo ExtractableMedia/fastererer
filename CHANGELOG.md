@@ -13,6 +13,9 @@ Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior t
 - Add `NO_COLOR` env var and `--no-color` flag to suppress ANSI color output;
   color also auto-disables when STDOUT isn't a TTY (piped output, CI logs,
   editor integrations). CLI now supports `--help`/`-h` and `--version`/`-v`.
+- Offense output now mirrors RuboCop's format with a `Performance/RuleName` rule name and a
+  [fast-ruby](https://github.com/fastruby/fast-ruby) documentation link, e.g.
+  `path:line: W: Performance/ForLoopVsEach: For loop is slower than using each. (url)`.
 
 ## 0.11.0
 

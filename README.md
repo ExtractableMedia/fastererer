@@ -58,16 +58,16 @@ RuboCop and its plugins (`path:line: SEVERITY: Department/RuleName: message.
 (url)`), so the rule name and a link to documentation are always visible:
 
 ```text
-app/models/post.rb:57: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/JuanitoFatas/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
-app/models/post.rb:61: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/JuanitoFatas/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
+app/models/post.rb:57: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
+app/models/post.rb:61: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
 
-db/seeds/cities.rb:15: W: Performance/KeysEachVsEachKey: Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block. (https://github.com/JuanitoFatas/fast-ruby#hasheach_key-instead-of-hashkeyseach-code)
+db/seeds/cities.rb:15: W: Performance/KeysEachVsEachKey: Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block. (https://github.com/fastruby/fast-ruby#hasheach_key-instead-of-hashkeyseach-code)
 
-test/options_test.rb:84: W: Performance/HashMergeBangVsHashBrackets: Hash#merge! with one argument is slower than Hash#[]. (https://github.com/JuanitoFatas/fast-ruby#hashmerge-vs-hash-code)
+test/options_test.rb:84: W: Performance/HashMergeBangVsHashBrackets: Hash#merge! with one argument is slower than Hash#[]. (https://github.com/fastruby/fast-ruby#hashmerge-vs-hash-code)
 
-test/module_test.rb:272: W: Performance/RescueVsRespondTo: Don't rescue NoMethodError, rather check with respond_to?. (https://github.com/JuanitoFatas/fast-ruby#beginrescue-vs-respond_to-for-control-flow-code)
+test/module_test.rb:272: W: Performance/RescueVsRespondTo: Don't rescue NoMethodError, rather check with respond_to?. (https://github.com/fastruby/fast-ruby#beginrescue-vs-respond_to-for-control-flow-code)
 
-spec/cache/mem_cache_store_spec.rb:161: W: Performance/GsubVsTr: Using tr is faster than gsub when replacing a single character in a string with another single character. (https://github.com/JuanitoFatas/fast-ruby#stringgsub-vs-stringtr-code)
+spec/cache/mem_cache_store_spec.rb:161: W: Performance/GsubVsTr: Using tr is faster than gsub when replacing a single character in a string with another single character. (https://github.com/fastruby/fast-ruby#stringgsub-vs-stringtr-code)
 ```
 
 The rule name (e.g. `Performance/SelectFirstVsDetect`) is derived from the

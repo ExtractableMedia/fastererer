@@ -3,58 +3,58 @@ en:
     rules:
       rescue_vs_respond_to:
         description: "Don't rescue NoMethodError, rather check with respond_to?"
-        url: "https://github.com/JuanitoFatas/fast-ruby#beginrescue-vs-respond_to-for-control-flow-code"
+        url: "https://github.com/fastruby/fast-ruby#beginrescue-vs-respond_to-for-control-flow-code"
       module_eval:
         description: "Using module_eval is slower than define_method"
-        url: "https://github.com/JuanitoFatas/fast-ruby#define_method-vs-module_eval-for-defining-methods-code"
+        url: "https://github.com/fastruby/fast-ruby#define_method-vs-module_eval-for-defining-methods-code"
       shuffle_first_vs_sample:
         description: "Array#shuffle.first is slower than Array#sample"
-        url: "https://github.com/JuanitoFatas/fast-ruby#arrayshufflefirst-vs-arraysample-code"
+        url: "https://github.com/fastruby/fast-ruby#arrayshufflefirst-vs-arraysample-code"
       for_loop_vs_each:
         description: "For loop is slower than using each"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerableeach-vs-for-loop-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerableeach-vs-for-loop-code"
       each_with_index_vs_while:
         description: "Using each_with_index is slower than while loop"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerableeach_with_index-vs-while-loop-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerableeach_with_index-vs-while-loop-code"
       map_flatten_vs_flat_map:
         description: "Array#map.flatten(1) is slower than Array#flat_map"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerablemaparrayflatten-vs-enumerableflat_map-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerablemaparrayflatten-vs-enumerableflat_map-code"
       reverse_each_vs_reverse_each:
         description: "Array#reverse.each is slower than Array#reverse_each"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerablereverseeach-vs-enumerablereverse_each-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerablereverseeach-vs-enumerablereverse_each-code"
       select_first_vs_detect:
         description: "Array#select.first is slower than Array#detect"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"
       sort_vs_sort_by:
         description: "Enumerable#sort is slower than Enumerable#sort_by"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerablesort-vs-enumerablesort_by-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerablesort-vs-enumerablesort_by-code"
       fetch_with_argument_vs_block:
         description: "Hash#fetch with second argument is slower than Hash#fetch with block"
-        url: "https://github.com/JuanitoFatas/fast-ruby#hashfetch-with-argument-vs-hashfetch--block-code"
+        url: "https://github.com/fastruby/fast-ruby#hashfetch-with-argument-vs-hashfetch--block-code"
       keys_each_vs_each_key:
         description: "Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block"
-        url: "https://github.com/JuanitoFatas/fast-ruby#hasheach_key-instead-of-hashkeyseach-code"
+        url: "https://github.com/fastruby/fast-ruby#hasheach_key-instead-of-hashkeyseach-code"
       hash_merge_bang_vs_hash_brackets:
         description: "Hash#merge! with one argument is slower than Hash#[]"
-        url: "https://github.com/JuanitoFatas/fast-ruby#hashmerge-vs-hash-code"
+        url: "https://github.com/fastruby/fast-ruby#hashmerge-vs-hash-code"
       block_vs_symbol_to_proc:
         description: "Calling argumentless methods within blocks is slower than using symbol to proc"
-        url: "https://github.com/JuanitoFatas/fast-ruby#block-vs-symbolto_proc-code"
+        url: "https://github.com/fastruby/fast-ruby#block-vs-symbolto_proc-code"
       proc_call_vs_yield:
         description: "Calling blocks with call is slower than yielding"
-        url: "https://github.com/JuanitoFatas/fast-ruby#proccall-and-block-arguments-vs-yield-code"
+        url: "https://github.com/fastruby/fast-ruby#proccall-and-block-arguments-vs-yield-code"
       gsub_vs_tr:
         description: "Using tr is faster than gsub when replacing a single character in a string with another single character"
-        url: "https://github.com/JuanitoFatas/fast-ruby#stringgsub-vs-stringtr-code"
+        url: "https://github.com/fastruby/fast-ruby#stringgsub-vs-stringtr-code"
       select_last_vs_reverse_detect:
         description: "Array#select.last is slower than Array#reverse.detect"
-        url: "https://github.com/JuanitoFatas/fast-ruby#enumerableselectlast-vs-enumerablereversedetect-code"
+        url: "https://github.com/fastruby/fast-ruby#enumerableselectlast-vs-enumerablereversedetect-code"
       getter_vs_attr_reader:
         description: "Use attr_reader for reading ivars"
-        url: "https://github.com/JuanitoFatas/fast-ruby#attr_accessor-vs-getter-and-setter-code"
+        url: "https://github.com/fastruby/fast-ruby#attr_accessor-vs-getter-and-setter-code"
       setter_vs_attr_writer:
         description: "Use attr_writer for writing to ivars"
-        url: "https://github.com/JuanitoFatas/fast-ruby#attr_accessor-vs-getter-and-setter-code"
+        url: "https://github.com/fastruby/fast-ruby#attr_accessor-vs-getter-and-setter-code"
       include_vs_cover_on_range:
         description: "Use #cover? instead of #include? on ranges"
-        url: "https://github.com/JuanitoFatas/fast-ruby#cover-vs-include-code"
+        url: "https://github.com/fastruby/fast-ruby#cover-vs-include-code"
