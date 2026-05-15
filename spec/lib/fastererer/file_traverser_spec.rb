@@ -326,11 +326,22 @@ describe Fastererer::FileTraverser do
     before { analyzer.scan }
 
     context 'when the analyzer has offenses' do
-      let(:explanation) { Fastererer::Offense::EXPLANATIONS[:for_loop_vs_each] }
+      let(:explanation) { Fastererer::Explanation.new(:for_loop_vs_each) }
 
       it 'prints offense' do
         expect { file_traverser.send(:output, analyzer) }
-          .to output(include("#{test_file_path}:1", explanation)).to_stdout
+          .to output(include("#{test_file_path}:1", explanation.to_s)).to_stdout
+      end
+    end
+
+    context 'with multiple rule types in one file' do
+      let(:test_file_path) { RSpec.root.join('support', 'output', 'multiple_offenses.rb') }
+
+      it 'prints one line per rule with both rule names present' do
+        expect { file_traverser.send(:output, analyzer) }.to output(
+          a_string_including('Performance/ForLoopVsEach:')
+            .and(including('Performance/ShuffleFirstVsSample:'))
+        ).to_stdout
       end
     end
   end
