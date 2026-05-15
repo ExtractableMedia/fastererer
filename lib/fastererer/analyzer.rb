@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'prism'
 require 'fastererer/method_definition'
 require 'fastererer/method_call'
 require 'fastererer/rescue_call'
@@ -10,6 +11,8 @@ require 'fastererer/scanners/rescue_call_scanner'
 require 'fastererer/scanners/method_definition_scanner'
 
 module Fastererer
+  class ParseError < StandardError; end
+
   class Analyzer
     attr_reader :file_path
     alias path file_path
@@ -20,75 +23,73 @@ module Fastererer
     end
 
     def scan
-      sexp_tree = Fastererer::Parser.parse(@file_content)
-      traverse_sexp_tree(sexp_tree)
+      result = Fastererer::Parser.parse(@file_content)
+
+      if result.failure?
+        error = result.errors.first
+        raise Fastererer::ParseError, error.message
+      end
+
+      visitor = AnalyzerVisitor.new(self)
+      result.value.accept(visitor)
     end
 
     def errors
       @errors ||= Fastererer::OffenseCollector.new
     end
 
-    private
+    # Internal callbacks invoked by AnalyzerVisitor during AST traversal.
+    # Public only because AnalyzerVisitor is a separate class.
 
-    def traverse_sexp_tree(sexp_tree)
-      return unless sexp_tree.is_a?(Sexp)
-
-      token = sexp_tree.first
-      scan_by_token(token, sexp_tree)
-
-      if %i[call iter].include?(token)
-        descend_into_call(sexp_tree)
-      else
-        sexp_tree.each { |element| traverse_sexp_tree(element) }
-      end
+    def scan_method_definitions(node)
+      scanner = MethodDefinitionScanner.new(node)
+      errors.push(scanner.offense) if scanner.offense_detected?
     end
 
-    def descend_into_call(sexp_tree)
-      method_call = MethodCall.new(sexp_tree)
-      traverse_sexp_tree(method_call.receiver_element) if method_call.receiver_element
-      traverse_sexp_tree(method_call.arguments_element)
-      traverse_sexp_tree(method_call.block_body) if method_call.block?
+    def scan_method_calls(node)
+      scanner = MethodCallScanner.new(node)
+      errors.push(scanner.offense) if scanner.offense_detected?
     end
 
-    def scan_by_token(token, element)
-      case token
-      when :defn
-        scan_method_definitions(element)
-      when :call, :iter
-        scan_method_calls(element)
-      when :for
-        scan_for_loop(element)
-      when :resbody
-        scan_rescue(element)
-      end
+    def scan_for_loop(node)
+      errors.push(Fastererer::Offense.new(:for_loop_vs_each, node.location.start_line))
     end
 
-    def scan_method_definitions(element)
-      method_definition_scanner = MethodDefinitionScanner.new(element)
+    def scan_rescue(node)
+      scanner = RescueCallScanner.new(node)
+      errors.push(scanner.offense) if scanner.offense_detected?
+    end
+  end
 
-      return unless method_definition_scanner.offense_detected?
-
-      errors.push(method_definition_scanner.offense)
+  class AnalyzerVisitor < Prism::Visitor
+    def initialize(analyzer)
+      super()
+      @analyzer = analyzer
     end
 
-    def scan_method_calls(element)
-      method_call_scanner = MethodCallScanner.new(element)
-
-      return unless method_call_scanner.offense_detected?
-
-      errors.push(method_call_scanner.offense)
+    def visit_call_node(node)
+      @analyzer.scan_method_calls(node)
+      super
     end
 
-    def scan_for_loop(element)
-      errors.push(Fastererer::Offense.new(:for_loop_vs_each, element.line))
+    def visit_def_node(node)
+      @analyzer.scan_method_definitions(node)
+      super
     end
 
-    def scan_rescue(element)
-      rescue_call_scanner = RescueCallScanner.new(element)
+    def visit_for_node(node)
+      @analyzer.scan_for_loop(node)
+      super
+    end
 
-      return unless rescue_call_scanner.offense_detected?
+    def visit_rescue_node(node)
+      @analyzer.scan_rescue(node)
+      super
+    end
 
-      errors.push(rescue_call_scanner.offense)
+    def visit_lambda_node(node)
+      @analyzer.scan_method_calls(node)
+      super
     end
   end
 end

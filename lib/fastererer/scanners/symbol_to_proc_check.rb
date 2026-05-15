@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'prism'
 require 'fastererer/method_call'
 
 module Fastererer
@@ -10,7 +11,7 @@ module Fastererer
     def check_symbol_to_proc
       return unless symbol_to_proc_candidate?
 
-      body_call = MethodCall.new(method_call.block_body)
+      body_call = MethodCall.new(method_call.block_body.first)
       return unless symbol_to_proc_body?(body_call)
 
       add_offense(:block_vs_symbol_to_proc)
@@ -18,10 +19,13 @@ module Fastererer
 
     def symbol_to_proc_candidate?
       method_call.block_argument_names.one? &&
-        !method_call.block_body.nil? &&
-        method_call.block_body.sexp_type == :call &&
+        single_call_body? &&
         method_call.arguments.none? &&
         !method_call.lambda_literal?
+    end
+
+    def single_call_body?
+      method_call.block_body&.size == 1 && method_call.block_body.first.is_a?(Prism::CallNode)
     end
 
     def symbol_to_proc_body?(body_call)

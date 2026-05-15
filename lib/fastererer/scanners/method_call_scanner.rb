@@ -116,8 +116,7 @@ module Fastererer
 
       first_argument = method_call.arguments.first
       return unless first_argument.type == :hash
-      # each key and value is an item by itself.
-      return unless first_argument.element.drop(1).count == 2
+      return unless first_argument.element.elements.one?
 
       add_offense(:hash_merge_bang_vs_hash_brackets)
     end

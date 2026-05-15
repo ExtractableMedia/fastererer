@@ -56,7 +56,7 @@ module Fastererer
     def scan_file(path)
       analyzer = Analyzer.new(path)
       analyzer.scan
-    rescue RubyParser::SyntaxError, Racc::ParseError, Timeout::Error => e
+    rescue StandardError => e
       parse_error_paths.push(ErrorData.new(path, e.class, e.message).to_s)
     else
       if offenses_grouped_by_type(analyzer).any?

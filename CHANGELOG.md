@@ -2,6 +2,10 @@
 
 Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by ExtractableMedia.
 
+## Unreleased
+
+- Migrate from `ruby_parser` to Ruby's native Prism parser for improved performance and Ruby 4.0 compatibility
+
 ## 0.12.0
 
 - Forked [fasterer](https://github.com/DamirSvrtan/fasterer) at v0.11.0 as `fastererer`, maintained by ExtractableMedia

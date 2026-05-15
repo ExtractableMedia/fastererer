@@ -34,5 +34,5 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.3'
 
-  spec.add_dependency 'ruby_parser', '>= 3.22.0'
+  spec.add_dependency 'prism', '>= 1.3.0'
 end

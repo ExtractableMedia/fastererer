@@ -2,13 +2,12 @@
 
 module Fastererer
   class MethodDefinition
-    # Exposed for testing purposes.
     attr_reader :element, :method_name, :block_argument_name, :body, :arguments
 
     alias name method_name
 
-    def initialize(element)
-      @element = element # Ripper element
+    def initialize(node)
+      @element = node
       set_method_name
       set_body
       set_arguments
@@ -25,40 +24,40 @@ module Fastererer
 
     private
 
-    def arguments_element
-      element[2].drop(1) || []
-    end
-
     def set_method_name
-      @method_name = @element[1]
-    end
-
-    def set_arguments
-      @arguments = arguments_element.map do |argument_element|
-        MethodDefinitionArgument.new(argument_element)
-      end
+      @method_name = @element.name
     end
 
     def set_body
-      @body = @element[3..]
+      body_node = @element.body
+      @body = if body_node.is_a?(Prism::StatementsNode)
+                body_node.body
+              else
+                []
+              end
+    end
+
+    def set_arguments
+      params = @element.parameters
+      return @arguments = [] unless params
+
+      all_params = params.requireds + params.optionals + params.keywords
+      @arguments = all_params.map { |p| MethodDefinitionArgument.new(p) }
     end
 
     def set_block_argument_name
-      return unless last_argument_element.to_s.start_with?('&')
+      params = @element.parameters
+      return unless params&.block.is_a?(Prism::BlockParameterNode)
 
-      @block_argument_name = last_argument_element.to_s.delete_prefix('&').to_sym
-    end
-
-    def last_argument_element
-      arguments_element.last
+      @block_argument_name = params.block.name
     end
   end
 
   class MethodDefinitionArgument
     attr_reader :element, :name, :type
 
-    def initialize(element)
-      @element = element
+    def initialize(node)
+      @element = node
       set_name
       set_argument_type
     end
@@ -78,15 +77,17 @@ module Fastererer
     private
 
     def set_name
-      @name = element.is_a?(Symbol) ? element : element[1]
+      @name = element.is_a?(Prism::MultiTargetNode) ? nil : element.name
     end
 
     def set_argument_type
-      @type = if element.is_a?(Symbol)
+      @type = case element
+              when Prism::RequiredParameterNode
                 :regular_argument
-              elsif element.is_a?(Sexp) && element.sexp_type == :lasgn
+              when Prism::OptionalParameterNode
                 :default_argument
-              elsif element.is_a?(Sexp) && element.sexp_type == :kwarg
+              when Prism::RequiredKeywordParameterNode,
+                   Prism::OptionalKeywordParameterNode
                 :keyword_argument
               end
     end
