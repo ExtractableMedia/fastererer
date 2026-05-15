@@ -49,7 +49,6 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '4.0'
           bundler-cache: true
       - name: Run RuboCop
         run: bin/rubocop
