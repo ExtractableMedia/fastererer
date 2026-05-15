@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'prism'
 require 'fastererer/method_definition'
 require 'fastererer/method_call'
 require 'fastererer/offense'
@@ -27,14 +28,13 @@ module Fastererer
     end
 
     def scan_block_call_offense
-      traverse_tree(method_definition.body) do |element|
-        next unless element.sexp_type == :call
+      block_name = method_definition.block_argument_name
+      traverse_tree(method_definition.body) do |node|
+        next unless node.is_a?(Prism::CallNode)
 
-        method_call = MethodCall.new(element)
-
-        if method_call.receiver.is_a?(Fastererer::VariableReference) &&
-           method_call.receiver.name == method_definition.block_argument_name &&
-           method_call.method_name == :call
+        if node.receiver.is_a?(Prism::LocalVariableReadNode) &&
+           node.receiver.name == block_name &&
+           node.name == :call
 
           add_offense(:proc_call_vs_yield) && return
         end
@@ -45,12 +45,15 @@ module Fastererer
       @method_definition ||= MethodDefinition.new(element)
     end
 
-    def traverse_tree(sexp_tree, &block)
-      sexp_tree.each do |element|
-        next unless element.is_a?(Array)
+    def traverse_tree(nodes, &block)
+      return unless nodes
 
-        yield element
-        traverse_tree(element, &block)
+      nodes.each do |node|
+        next unless node.is_a?(Prism::Node)
+
+        yield node
+        child_nodes = node.compact_child_nodes
+        traverse_tree(child_nodes, &block)
       end
     end
 
@@ -69,12 +72,12 @@ module Fastererer
     end
 
     def trivial_setter?(first_argument)
-      body_first = method_definition.body.first
-      expected_ivar = "@#{method_definition.name.to_s.delete_suffix('=')}"
+      body_node = method_definition.body.first
+      return false unless body_node.is_a?(Prism::InstanceVariableWriteNode)
+      return false unless body_node.value.is_a?(Prism::LocalVariableReadNode)
 
-      body_first.sexp_type == :iasgn &&
-        body_first[1].to_s == expected_ivar &&
-        body_first[2][1] == first_argument.name
+      expected_ivar = :"@#{method_definition.name.to_s.delete_suffix('=')}"
+      body_node.name == expected_ivar && body_node.value.name == first_argument.name
     end
 
     def scan_getter_offense
@@ -85,10 +88,10 @@ module Fastererer
     end
 
     def trivial_getter?
-      body_first = method_definition.body.first
+      body_node = method_definition.body.first
+      expected_ivar = :"@#{method_definition.name}"
 
-      body_first.sexp_type == :ivar &&
-        body_first[1].to_s == "@#{method_definition.name}"
+      body_node.is_a?(Prism::InstanceVariableReadNode) && body_node.name == expected_ivar
     end
   end
 end

@@ -312,9 +312,10 @@ describe Fastererer::FileTraverser do
 
     let(:file_traverser) { described_class.new('.') }
 
-    it 'has errors' do
+    it 'has errors', :aggregate_failures do
+      expect(file_traverser.parse_error_paths.count).to eq(1)
       expect(file_traverser.parse_error_paths.first)
-        .to start_with('user.rb - RubyParser::SyntaxError - unterminated')
+        .to start_with('user.rb - Fastererer::ParseError - ')
     end
   end
 
