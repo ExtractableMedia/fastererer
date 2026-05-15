@@ -2,7 +2,11 @@
 
 require 'spec_helper'
 
-describe Fastererer::FileTraverser do
+# This spec exercises the executable as a black box (shells out to
+# `exe/fastererer` and asserts on exit codes), so its subject is the
+# CLI binary, not a Ruby class.
+# rubocop:disable RSpec/DescribeClass
+describe 'Fastererer CLI' do
   include FileHelper
 
   include_context 'isolated environment'
@@ -36,3 +40,4 @@ describe Fastererer::FileTraverser do
     File.expand_path('../../../exe/fastererer', __dir__)
   end
 end
+# rubocop:enable RSpec/DescribeClass
