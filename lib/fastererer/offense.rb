@@ -49,7 +49,8 @@ module Fastererer
         'Hash#fetch with second argument is slower than Hash#fetch with block',
 
       keys_each_vs_each_key:
-        'Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block',
+        'Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if ' \
+        'the hash is modified during the each block',
 
       hash_merge_bang_vs_hash_brackets:
         'Hash#merge! with one argument is slower than Hash#[]',
@@ -61,7 +62,8 @@ module Fastererer
         'Calling blocks with call is slower than yielding',
 
       gsub_vs_tr:
-        'Using tr is faster than gsub when replacing a single character in a string with another single character',
+        'Using tr is faster than gsub when replacing a single character in a string with ' \
+        'another single character',
 
       select_last_vs_reverse_detect:
         'Array#select.last is slower than Array#reverse.detect',

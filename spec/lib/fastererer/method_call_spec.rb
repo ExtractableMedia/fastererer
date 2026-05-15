@@ -15,7 +15,7 @@ describe Fastererer::MethodCall do
         # This is where the :call token will be recognized.
         let(:call_element) { ripper }
 
-        it 'detects constant' do
+        it 'detects constant', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -27,7 +27,7 @@ describe Fastererer::MethodCall do
         # This is where the :call token will be recognized.
         let(:call_element) { ripper }
 
-        it 'detects integer' do
+        it 'detects integer', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -38,7 +38,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects string' do
+        it 'detects string', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -52,7 +52,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper[2] }
 
-        it 'detects variable' do
+        it 'detects variable', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
@@ -65,7 +65,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects method' do
+        it 'detects method', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.receiver).to be_a(described_class)
           expect(method_call.receiver.name).to eq(:hi)
@@ -80,7 +80,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects constant' do
+        it 'detects constant', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -92,7 +92,7 @@ describe Fastererer::MethodCall do
         # This is where the :call token will be recognized.
         let(:call_element) { ripper }
 
-        it 'detects integer' do
+        it 'detects integer', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -103,7 +103,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects string' do
+        it 'detects string', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
         end
@@ -117,7 +117,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper[2] }
 
-        it 'detects variable' do
+        it 'detects variable', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.arguments).to be_empty
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
@@ -130,7 +130,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects method' do
+        it 'detects method', :aggregate_failures do
           expect(method_call.method_name).to eq(:hello)
           expect(method_call.receiver).to be_a(described_class)
           expect(method_call.receiver.name).to eq(:hi)
@@ -152,16 +152,16 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call.has_block?).to be
-          expect(method_call.block_argument_names.count).to be(0)
+          expect(method_call).to have_block
+          expect(method_call.block_argument_names).to be_empty
           expect(method_call.receiver).to be_a(described_class)
         end
       end
 
-      describe 'and no arguments, with block parameter' do
+      describe 'and no arguments, with one block parameter' do
         let(:code) do
           <<-CODE
             number_one.fetch do |el|
@@ -173,17 +173,16 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call.has_block?).to be
-          expect(method_call.block_argument_names.count).to be(1)
-          expect(method_call.block_argument_names.first).to be(:el)
+          expect(method_call).to have_block
+          expect(method_call.block_argument_names).to contain_exactly(:el)
           expect(method_call.receiver).to be_a(described_class)
         end
       end
 
-      describe 'and no arguments, with block parameter' do
+      describe 'and no arguments, with multiple block parameters' do
         let(:code) do
           <<-CODE
             number_one.fetch do |el, tip|
@@ -195,13 +194,11 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call.has_block?).to be
-          expect(method_call.block_argument_names.count).to be(2)
-          expect(method_call.block_argument_names.first).to be(:el)
-          expect(method_call.block_argument_names.last).to be(:tip)
+          expect(method_call).to have_block
+          expect(method_call.block_argument_names).to eq(%i[el tip])
           expect(method_call.receiver).to be_a(described_class)
         end
       end
@@ -219,10 +216,10 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper[2] }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments.count).to be(1)
-          expect(method_call.has_block?).to be
+          expect(method_call).to have_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -239,10 +236,10 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper[2] }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call.has_block?).to be
+          expect(method_call).to have_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -260,10 +257,10 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper[2] }
 
-        it 'detects block' do
+        it 'detects block', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments).to be_empty
-          expect(method_call.has_block?).to be
+          expect(method_call).to have_block
           expect(method_call.receiver).to be_a(Fastererer::VariableReference)
         end
       end
@@ -275,7 +272,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects argument' do
+        it 'detects argument', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments.count).to eq(1)
           expect(method_call.arguments.first.type).to eq(:lit)
@@ -289,7 +286,7 @@ describe Fastererer::MethodCall do
 
         let(:call_element) { ripper }
 
-        it 'detects argument' do
+        it 'detects argument', :aggregate_failures do
           expect(method_call.method_name).to eq(:fetch)
           expect(method_call.arguments.count).to eq(2)
           expect(method_call.arguments[0].type).to eq(:lit)
@@ -309,11 +306,11 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper[2] }
 
-    it 'detects argument and a block' do
+    it 'detects argument and a block', :aggregate_failures do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments.first.type).to eq(:lit)
-      expect(method_call.has_block?).to be
+      expect(method_call).to have_block
       expect(method_call.receiver).to be_a(Fastererer::VariableReference)
     end
   end
@@ -323,7 +320,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper }
 
-    it 'detects two arguments' do
+    it 'detects two arguments', :aggregate_failures do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(2)
       expect(method_call.arguments[0].type).to eq(:lit)
@@ -337,7 +334,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper }
 
-    it 'detects two arguments' do
+    it 'detects two arguments', :aggregate_failures do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(2)
       expect(method_call.arguments[0].type).to eq(:lit)
@@ -356,7 +353,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper.drop(1).first.first }
 
-    it 'detects argument and a block' do
+    it 'detects argument and a block', skip: 'pending parser support' do
       # expect(method_call.method_name).to eq('fetch')
       # expect(method_call.arguments.count).to eq(2)
       # expect(method_call.arguments[0].type).to eq(:symbol_literal)
@@ -373,7 +370,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper[2] }
 
-    it 'detects arguments' do
+    it 'detects arguments', :aggregate_failures do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(2)
       expect(method_call.arguments[0].type).to eq(:lit)
@@ -387,7 +384,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper }
 
-    it 'detects regex argument' do
+    it 'detects regex argument', :aggregate_failures do
       expect(method_call.method_name).to eq(:fetch)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments[0].type).to eq(:lit)
@@ -400,7 +397,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper }
 
-    it 'detects regex argument' do
+    it 'detects regex argument', :aggregate_failures do
       expect(method_call.method_name).to eq(:flatten)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments[0].type).to eq(:lit)
@@ -413,11 +410,11 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper }
 
-    it 'detects block pass argument' do
+    it 'detects block pass argument', :aggregate_failures do
       expect(method_call.method_name).to eq(:select)
       expect(method_call.arguments.count).to eq(1)
       expect(method_call.arguments[0].type).to eq(:block_pass)
-      expect(method_call.has_block?).to be
+      expect(method_call).to have_block
     end
   end
 
@@ -426,7 +423,7 @@ describe Fastererer::MethodCall do
 
     let(:call_element) { ripper.drop(1).first.first[1] }
 
-    xit 'should recognize receiver' do
+    it 'recognizes receiver', skip: 'pending parser support' do
       # expect(method_call.method_name).to eq('hello')
       # expect(method_call.receiver).to be_a(Fastererer::MethodCall)
       # expect(method_call.receiver.name).to eq('hi')

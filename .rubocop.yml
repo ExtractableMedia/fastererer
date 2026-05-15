@@ -22,3 +22,11 @@ Layout/LineLength:
 
 Style/Documentation:
   Enabled: false
+
+# Analyzer specs are organized by speedup scenario (one file per scenario)
+# rather than by class, so their paths intentionally diverge from the
+# described class name. cli_spec.rb tests FileTraverser through the executable.
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - 'spec/lib/fastererer/analyzer/**/*_spec.rb'
+    - 'spec/lib/fastererer/cli_spec.rb'

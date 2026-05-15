@@ -30,7 +30,7 @@ describe Fastererer::FileTraverser do
       end
     end
 
-    context 'missing exclude_paths key' do
+    context 'with missing exclude_paths key' do
       before do
         create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
                     ['speedups:'])
@@ -132,7 +132,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'only a non-ruby file inside' do
+      context 'with only a non-ruby file inside' do
         before do
           create_file('something.yml')
         end
@@ -142,7 +142,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'a ruby file inside' do
+      context 'with a ruby file inside' do
         let(:file_name) { 'something.rb' }
 
         before do
@@ -154,7 +154,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'a ruby file inside that is ignored' do
+      context 'with a ruby file inside that is ignored' do
         let(:file_name) { 'something.rb' }
 
         let(:config_file_content) do
@@ -174,7 +174,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'a ruby file inside that is not ignored' do
+      context 'with a ruby file inside that is not ignored' do
         let(:file_name) { 'something.rb' }
 
         let(:config_file_content) do
@@ -192,7 +192,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'nested ruby files' do
+      context 'with nested ruby files' do
         before do
           create_file('something.rb')
           create_file('nested/something.rb')
@@ -204,7 +204,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'ruby files but nested ignored explicitly' do
+      context 'with nested ruby files explicitly ignored' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'nested/something.rb'"
@@ -222,7 +222,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'ruby files but nested ignored with *' do
+      context 'with nested ruby files ignored via *' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'nested/*'"
@@ -240,7 +240,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'ruby files but unnested ignored' do
+      context 'with unnested ruby files ignored' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'something.rb'"
@@ -261,7 +261,7 @@ describe Fastererer::FileTraverser do
     describe 'with one file argument' do
       let(:argument) { 'something.rb' }
 
-      context 'and no config file' do
+      context 'without a config file' do
         before do
           create_file('something.rb')
         end
@@ -271,7 +271,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'and config file ignoring it' do
+      context 'with a config file ignoring it' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'something.rb'"
@@ -293,7 +293,7 @@ describe Fastererer::FileTraverser do
 
       let(:file_names) { ['nested/something.rb', 'nested/something_else.rb'] }
 
-      context 'and no config file' do
+      context 'without a config file' do
         before do
           file_names.each { |file_name| create_file(file_name) }
         end
@@ -303,7 +303,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'and config file ignoring it' do
+      context 'with a config file ignoring it' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'nested/*'"

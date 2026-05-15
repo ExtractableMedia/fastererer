@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Matt Menefee', 'Damir Svrtan']
   spec.email         = ['matt.menefee@extractablemedia.com', 'damir.svrtan@gmail.com']
   spec.summary       = 'Run Ruby more than fast. Fastererer'
-  spec.description   = 'Use Fastererer to check various places in your code that could be faster. ' \
-                       'A fork of fasterer (https://github.com/DamirSvrtan/fasterer) with Ruby 4.0 ' \
-                       'support and native Prism parsing.'
+  spec.description   = 'Use Fastererer to check various places in your code that could be ' \
+                       'faster. A fork of fasterer (https://github.com/DamirSvrtan/fasterer) ' \
+                       'with Ruby 4.0 support and native Prism parsing.'
   spec.homepage      = 'https://github.com/ExtractableMedia/fastererer'
   spec.license       = 'MIT'
 
@@ -35,14 +35,4 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 3.3'
 
   spec.add_dependency 'ruby_parser', '>= 3.22.0'
-
-  spec.add_development_dependency 'bundler', '>= 1.6'
-  spec.add_development_dependency 'debug', '>= 1.10'
-  spec.add_development_dependency 'rake',    '>= 12.3.3'
-  spec.add_development_dependency 'rspec',   '~> 3.2'
-  spec.add_development_dependency 'rubocop', '>= 1.72'
-  spec.add_development_dependency 'rubocop-performance', '>= 1.20'
-  spec.add_development_dependency 'rubocop-rake', '>= 0.6'
-  spec.add_development_dependency 'rubocop-rspec', '>= 3.0'
-  spec.add_development_dependency 'simplecov', '~> 0.9'
 end

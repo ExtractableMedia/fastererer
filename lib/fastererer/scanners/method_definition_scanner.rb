@@ -65,8 +65,10 @@ module Fastererer
       first_argument = method_definition.arguments.first
       return if first_argument.type != :regular_argument
 
+      expected_ivar = "@#{method_definition.name.to_s.delete_suffix('=')}"
+
       if method_definition.body.first.sexp_type == :iasgn &&
-         method_definition.body.first[1].to_s == "@#{method_definition.name.to_s.delete_suffix('=')}" &&
+         method_definition.body.first[1].to_s == expected_ivar &&
          method_definition.body.first[2][1] == first_argument.name
 
         add_offense(:setter_vs_attr_writer)
