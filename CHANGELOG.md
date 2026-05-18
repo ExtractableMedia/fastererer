@@ -1,18 +1,39 @@
 # Changelog
 
-Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by ExtractableMedia.
+All notable changes to this project are documented in this file.
 
-## 0.12.0
+The format is based on [Keep a Changelog] and this project adheres to [Semantic Versioning].
 
-- Forked [fasterer](https://github.com/DamirSvrtan/fasterer) at v0.11.0 as `fastererer`, maintained by ExtractableMedia
-- Config filename changed from `.fasterer.yml` to `.fastererer.yml`
-- Executable changed from `fasterer` to `fastererer`
-- Module renamed from `Fasterer` to `Fastererer`
-- Add explicit support for Ruby 4.0
-- Drop support for EOL Ruby versions (2.x, 3.0, 3.1, 3.2). The minimum required Ruby version is now 3.3.
-- Add `NO_COLOR` env var and `--no-color` flag to suppress ANSI color output;
-  color also auto-disables when STDOUT isn't a TTY (piped output, CI logs,
-  editor integrations). CLI now supports `--help`/`-h` and `--version`/`-v`.
+Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/DamirSvrtan/fasterer), prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by ExtractableMedia.
+
+## [Unreleased]
+
+## [0.12.0] - 2026-05-18
+
+### Added
+
+- [#2]: Explicit support for Ruby 4.0.
+- [#42]: `NO_COLOR` env var and `--no-color` flag to suppress ANSI color output. Color also
+  auto-disables when STDOUT isn't a TTY (piped output, CI logs, editor integrations).
+- [#42]: `--help`/`-h` and `--version`/`-v` CLI flags.
+
+### Changed
+
+- [#1]: Rename the gem from `fasterer` to `fastererer`:
+  - Config filename: `.fasterer.yml` → `.fastererer.yml`.
+  - Executable: `fasterer` → `fastererer`.
+  - Top-level module: `Fasterer` → `Fastererer`.
+
+### Removed
+
+- [#2]: Support for EOL Ruby versions (2.x, 3.0, 3.1, 3.2). Minimum required Ruby is now 3.3.
+
+### Fixed
+
+- `select_last_vs_reverse_detect` no longer reports a false positive when `.last` is called with
+  arguments. `.last(n)` can return multiple elements, so `detect` (which only returns the first
+  match) isn't an equivalent replacement. Mirrors the same fix for `select_first_vs_detect`
+  shipped in 0.10.1.
 
 ## 0.11.0
 
@@ -82,3 +103,11 @@ Versions 0.11.0 and earlier were released under the `fasterer` gem name, prior t
 - Better error message on each_key
 - Update Ruby Parser to ~> 3.9
 - Support Ruby 2.3
+
+[Keep a Changelog]: https://keepachangelog.com
+[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
+[Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.11.0...v0.12.0
+[#1]: https://github.com/ExtractableMedia/fastererer/pull/1
+[#2]: https://github.com/ExtractableMedia/fastererer/pull/2
+[#42]: https://github.com/ExtractableMedia/fastererer/pull/42
