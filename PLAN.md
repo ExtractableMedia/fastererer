@@ -13,7 +13,7 @@ exe/fastererer
     ↓
 CLI.execute
     ├── (existing) FileTraverser path → text output
-    └── (new) --mcp flag → Fastererer::McpServer.start
+    └── (new) --mcp flag → Fastererer::MCP::Server.new.start
                                 ↓
                           mcp gem (stdio transport)
                                 ↓
@@ -23,11 +23,11 @@ CLI.execute
                     └──────────────────────────────┘
 ```
 
-> **Why `McpServer` and not `MCP`?** The `mcp` gem defines a top-level `::MCP` module.
-> Naming our namespace `Fastererer::MCP` would shadow it — bare references to
-> `MCP::Server` inside the module would resolve to `Fastererer::MCP::Server`
-> (infinite recursion / `NameError`), not `::MCP::Server`. Using `McpServer`
-> eliminates this entirely.
+> **Namespace note:** The `mcp` gem defines a top-level `::MCP` module. Like
+> RuboCop (`RuboCop::MCP::Server`), we use `Fastererer::MCP::Server` and
+> qualify all gem references with the `::` prefix (`::MCP::Server`,
+> `::MCP::Tool`, etc.) to avoid the shadowing issue. This matches RuboCop's
+> convention exactly.
 
 ## Step 1: Refactor `Analyzer` to accept content directly
 
@@ -44,7 +44,7 @@ end
 
 This is backward-compatible — the two existing call sites (`FileTraverser#scan_file` and specs) pass only a positional arg. `ruby_parser` operates on strings, so it doesn't care whether the content came from a file or was passed directly.
 
-When `content:` is provided, `file_path` is a synthetic label (e.g., `"(source_code)"`). The MCP tool will use this as the `file` field in JSON output for inline analysis.
+When `content:` is provided, `file_path` is a synthetic label. Following RuboCop's convention, use `'example.rb'` as the default filename when `source_code` is provided without a `path` — this allows config file-pattern matching to work correctly.
 
 Add a test immediately: pass a `content:` string with a known offense, verify `scan` finds it without any file on disk.
 
@@ -52,56 +52,86 @@ Add a test immediately: pass a `content:` string with a known offense, verify `s
 
 **Files:** `Gemfile`
 
-Add `mcp` (~> 0.17) to the Gemfile in a `:mcp` group for development/CI convenience:
+Add `mcp` (~> 0.17) to the Gemfile for development/CI convenience (matching RuboCop's approach):
 
 ```ruby
-group :mcp do
-  gem 'mcp', '~> 0.17'
-end
+gem 'mcp', '~> 0.17'
 ```
 
 Do NOT add it to `spec.add_dependency` in the gemspec. Ruby has no native optional dependencies — the right pattern is:
 
 - Gemspec: no mention of `mcp`
-- Runtime: lazy `require 'mcp'` with `rescue LoadError` and a clear install instruction
+- Runtime: lazy `require 'mcp'` with `rescue LoadError` and runtime version check
 - README: document the optional dependency
 
-The `mcp` gem is at 0.17.0 (May 2026) with significant API changes since 0.6. Pinning `~> 0.17` ensures compatibility with the current tool class API (`MCP::Tool` subclasses, `server_context:` kwarg, `StdioTransport`).
+This matches RuboCop exactly: their gemspec has no `mcp` dependency, their Gemfile has `gem 'mcp', '~> 0.16'` for development, and `server.rb` handles the optional require at runtime.
 
-## Step 3: Create `Fastererer::McpServer` with both tools
+## Step 3: Create `Fastererer::MCP::Server` with both tools
 
-**New file:** `lib/fastererer/mcp_server.rb`
+**New file:** `lib/fastererer/mcp/server.rb`
 
-Single file containing the server class and both tool definitions inline. Two tools with ~25 lines each don't warrant a subdirectory structure — if more tools are added later, extraction is trivial.
+Single file containing the server class and both tool definitions. Follows RuboCop's structure exactly: `RuboCop::MCP::Server` → `Fastererer::MCP::Server`.
 
-### Server setup
+### Dependency loading (top of file)
+
+Following RuboCop's pattern, the `mcp` gem is loaded and version-checked at the top of `server.rb`, outside any class. This runs only when the file is required (i.e., only when `--mcp` is passed):
+
+```ruby
+begin
+  require 'mcp'
+
+  required_mcp_version = '0.6.0'
+
+  if Gem::Version.new(required_mcp_version) > Gem::Version.new(MCP::VERSION)
+    warn <<~MESSAGE
+      Error: `mcp` gem version #{MCP::VERSION} was loaded, but `fastererer --mcp` requires #{required_mcp_version}.
+      - If you're using Bundler, add `gem 'mcp', '~> 0.6'` to your Gemfile.
+      - Otherwise, run `gem update mcp`.
+    MESSAGE
+    exit!
+  end
+rescue LoadError => e
+  raise unless e.path == 'mcp'
+
+  warn <<~MESSAGE
+    Error: Unable to load `mcp` gem. Add `gem 'mcp', '~> 0.6'` to your Gemfile, or run `gem install mcp`.
+  MESSAGE
+
+  exit!
+end
+```
+
+Key details matching RuboCop:
+- `rescue LoadError => e` with `raise unless e.path == 'mcp'` — only catches `mcp` load failures, re-raises unrelated ones
+- Runtime version check with `Gem::Version` — minimum 0.6.0
+- `exit!` (hard exit, no `at_exit` hooks) on failure
+- User-facing instructions tell them to add `gem 'mcp', '~> 0.6'` (the minimum, not our dev pin)
+
+### Server class
 
 ```ruby
 module Fastererer
-  class McpServer
-    def self.start
-      require_mcp_gem!
-      server = ::MCP::Server.new(
-        name: "fastererer",
-        version: Fastererer::VERSION,
-        instructions: "Analyze Ruby code for performance anti-patterns. " \
-                      "Use fastererer_inspection to check a file or code snippet, " \
-                      "fastererer_list_checks to see available checks and their config status.",
-        tools: [InspectionTool, ListChecksTool]
-      )
-      transport = ::MCP::Server::Transports::StdioTransport.new(server)
-      transport.open
-    end
+  module MCP
+    class Server
+      def initialize
+        @config = Fastererer::Config.new
+      end
 
-    def self.require_mcp_gem!
-      require 'mcp'
-    rescue LoadError
-      warn "The 'mcp' gem is required for MCP server mode. Install it with: gem install mcp"
-      exit 1
+      def start
+        server = ::MCP::Server.new(
+          name: 'fastererer_mcp_server',
+          version: Fastererer::VERSION,
+          tools: [inspection_tool, list_checks_tool]
+        )
+
+        ::MCP::Server::Transports::StdioTransport.new(server).open
+      end
     end
   end
 end
 ```
+
+Note: all references to the gem's MCP module use the `::` prefix (`::MCP::Server`, `::MCP::Tool`, etc.) to disambiguate from our own `Fastererer::MCP` namespace. This matches RuboCop's approach.
 
 > **`$stdout` contamination warning:** MCP stdio transport communicates over
 > `$stdin`/`$stdout`. Any `puts`/`print` to `$stdout` corrupts the JSON-RPC
@@ -109,40 +139,41 @@ end
 > (which both write to `$stdout`). The `Analyzer` class is safe — it only
 > reads files and builds data structures.
 
-### `InspectionTool`
+### `fastererer_inspection` tool
+
+Defined via `::MCP::Tool.define` (matching RuboCop's pattern — not subclasses):
 
 ```ruby
-class Fastererer::McpServer::InspectionTool < ::MCP::Tool
-  tool_name "fastererer_inspection"
-  description "Inspect Ruby code for performance anti-patterns and return structured results"
+def inspection_tool
+  config = @config
 
-  input_schema(
-    properties: {
-      path: { type: "string", description: "Path to a Ruby file on disk to inspect" },
-      source_code: { type: "string", description: "Inline Ruby source code to inspect" }
+  ::MCP::Tool.define(
+    name: 'fastererer_inspection',
+    description: 'Inspect Ruby code for performance anti-patterns and return structured results',
+    input_schema: {
+      properties: {
+        path: { type: 'string' },
+        source_code: { type: 'string' }
+      }
+    },
+    annotations: {
+      title: "Fastererer's inspection",
+      read_only_hint: true,
+      destructive_hint: false,
+      idempotent_hint: true,
+      open_world_hint: false
     }
-  )
-
-  annotations(
-    title: "Fastererer Inspection",
-    read_only_hint: true,
-    destructive_hint: false,
-    idempotent_hint: true,
-    open_world_hint: false
-  )
-
-  def self.call(path: nil, source_code: nil, server_context:)
-    return error_response("Provide either 'path' or 'source_code', not both") if path && source_code
-    return error_response("Provide either 'path' or 'source_code'") if !path && !source_code
+  ) do |path: nil, source_code: nil|
+    raise Fastererer::Error, "Provide either 'path' or 'source_code', not both" if path && source_code
+    raise Fastererer::Error, "Provide either 'path' or 'source_code'" if !path && !source_code
 
     analyzer = if source_code
-                 Fastererer::Analyzer.new("(source_code)", content: source_code)
+                 Fastererer::Analyzer.new(path || 'example.rb', content: source_code)
                else
                  Fastererer::Analyzer.new(path)
                end
     analyzer.scan
 
-    config = Fastererer::Config.new
     ignored = config.ignored_speedups
 
     offenses = analyzer.errors
@@ -159,40 +190,31 @@ class Fastererer::McpServer::InspectionTool < ::MCP::Tool
         end
       end
 
-    ::MCP::Tool::Response.new([{ type: "text", text: offenses.to_json }])
-  rescue RubyParser::SyntaxError, Racc::ParseError => e
-    error_response("Parse error: #{e.message}")
-  rescue Timeout::Error
-    error_response("Analysis timed out")
-  rescue Errno::ENOENT => e
-    error_response("File not found: #{e.message}")
-  rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError => e
-    error_response("Encoding error: #{e.message}")
-  end
-
-  def self.error_response(message)
-    ::MCP::Tool::Response.new([{ type: "text", text: message }], error: true)
+    ::MCP::Tool::Response.new([{ type: 'text', text: offenses.to_json }])
+  rescue Fastererer::Error => e
+    ::MCP::Tool::Response.new([{ type: 'text', text: e.message }], error: true)
   end
 end
 ```
 
-### `ListChecksTool`
+### `fastererer_list_checks` tool
 
 ```ruby
-class Fastererer::McpServer::ListChecksTool < ::MCP::Tool
-  tool_name "fastererer_list_checks"
-  description "List all available performance checks and their enabled/disabled status"
+def list_checks_tool
+  config = @config
 
-  annotations(
-    title: "Fastererer List Checks",
-    read_only_hint: true,
-    destructive_hint: false,
-    idempotent_hint: true,
-    open_world_hint: false
-  )
-
-  def self.call(server_context:)
-    config = Fastererer::Config.new
+  ::MCP::Tool.define(
+    name: 'fastererer_list_checks',
+    description: 'List all available performance checks and their enabled/disabled status',
+    input_schema: { properties: {} },
+    annotations: {
+      title: "Fastererer's list checks",
+      read_only_hint: true,
+      destructive_hint: false,
+      idempotent_hint: true,
+      open_world_hint: false
+    }
+  ) do
     ignored = config.ignored_speedups
 
     checks = Fastererer::Offense::EXPLANATIONS.each_with_object({}) do |(name, explanation), hash|
@@ -202,10 +224,28 @@ class Fastererer::McpServer::ListChecksTool < ::MCP::Tool
       }
     end
 
-    ::MCP::Tool::Response.new([{ type: "text", text: checks.to_json }])
+    ::MCP::Tool::Response.new([{ type: 'text', text: checks.to_json }])
   end
 end
 ```
+
+### Error handling pattern
+
+Following RuboCop's approach: catch specific errors and re-raise as a single `Fastererer::Error`, which the tool block rescues and returns as `::MCP::Tool::Response.new([...], error: true)`.
+
+This requires adding a simple error class (if one doesn't already exist):
+
+```ruby
+module Fastererer
+  class Error < StandardError; end
+end
+```
+
+Errors to catch and wrap in the inspection tool:
+- `RubyParser::SyntaxError`, `Racc::ParseError` → "Parse error: ..."
+- `Timeout::Error` → "Analysis timed out"
+- `Errno::ENOENT` → "No such file or directory: ..."
+- `Encoding::UndefinedConversionError`, `Encoding::InvalidByteSequenceError` → "Encoding error: ..."
 
 **Notes on `Config` behavior:** `Config.new` searches for `.fastererer.yml` upward from `Dir.pwd`. In MCP mode, the working directory is whatever the MCP client sets (typically the project root). This is correct — the config is project-specific and matches CLI behavior.
 
@@ -225,8 +265,8 @@ In `execute`, check for the flag before the normal traversal flow:
 def self.execute
   options = parse_options(ARGV.dup)
   if options[:mcp]
-    require_relative 'mcp_server'
-    Fastererer::McpServer.start
+    require_relative 'mcp/server'
+    Fastererer::MCP::Server.new.start
     return
   end
   Painter.disable! if options[:no_color]
@@ -236,10 +276,13 @@ def self.execute
 end
 ```
 
+The `require_relative 'mcp/server'` is lazy — the `mcp` gem is only loaded when `--mcp` is actually passed. This matches RuboCop's pattern where their CLI command does `require_relative '../../mcp/server'` inside the `run` method.
+
 ## Step 5: Add tests
 
 **New files:**
-- `spec/lib/fastererer/mcp_server_spec.rb`
+- `spec/lib/fastererer/mcp/server_spec.rb`
+- `spec/support/mcp_helper.rb` — helper for running the server with `StringIO` stdin/stdout (matching RuboCop's `spec/support/mcp_helper.rb` pattern)
 
 **Conditional execution:** Since `mcp` is optional, MCP specs must skip gracefully:
 
@@ -251,7 +294,7 @@ rescue LoadError
   MCP_AVAILABLE = false
 end
 
-RSpec.describe Fastererer::McpServer, if: MCP_AVAILABLE do
+RSpec.describe Fastererer::MCP::Server, if: MCP_AVAILABLE do
   # ...
 end
 ```
@@ -275,14 +318,18 @@ Use the existing `isolated environment` shared context for tests that depend on 
 
 ```
 lib/fastererer/
-├── mcp_server.rb          # Server class + both tool definitions
+├── mcp/
+│   └── server.rb              # Dependency loading, server class, tool definitions
 spec/lib/fastererer/
-├── mcp_server_spec.rb     # All MCP-related tests
+├── mcp/
+│   └── server_spec.rb         # All MCP-related tests
+spec/support/
+├── mcp_helper.rb              # StringIO-based server test helper
 ```
 
 ## Dependency Notes
 
-- **`mcp` gem (~> 0.17):** Optional. Only loaded when `--mcp` is used. Not in gemspec `add_dependency`. Documented in README.
+- **`mcp` gem:** Optional. Only loaded when `--mcp` is used. Not in gemspec `add_dependency`. Minimum runtime version: `0.6.0` (enforced at load time). Development Gemfile pins `~> 0.17`. Users told to add `gem 'mcp', '~> 0.6'` to their Gemfile.
 - **No other new dependencies.**
 - **Ruby >= 3.3:** Already required; no change needed.
 
@@ -292,7 +339,7 @@ All steps in a single PR:
 
 1. Refactor `Analyzer` to accept `content:` + add test (2-line change, zero risk)
 2. Add `mcp` gem to Gemfile `:mcp` group
-3. Create `Fastererer::McpServer` with both tools
+3. Create `Fastererer::MCP::Server` with both tools
 4. Wire `--mcp` flag into CLI
 5. Add tests (alongside each step, not after)
 
@@ -300,6 +347,10 @@ Estimated size: ~150-200 lines of new Ruby code + ~150 lines of tests.
 
 ## Resolved Questions
 
-1. **Tool naming:** Use `fastererer_` prefix (e.g., `fastererer_inspection`). Avoids collisions when multiple MCP servers are registered. Matches RuboCop's convention. Some MCP clients auto-prefix with the server name, but not all do.
-2. **Tempfile vs Analyzer refactor:** Do the Analyzer refactor upfront (Step 1). It's a 2-line backward-compatible change that eliminates the need for tempfiles entirely. No concurrency issues, no encoding edge cases, no cleanup logic.
-3. **`mcp` gem version:** Pin `~> 0.17` to match the current API (`MCP::Tool` subclasses, `server_context:`, `StdioTransport`, annotations).
+1. **Tool naming:** Use `fastererer_` prefix (e.g., `fastererer_inspection`). Matches RuboCop's `rubocop_inspection` / `rubocop_autocorrection` convention.
+2. **Tempfile vs Analyzer refactor:** Do the Analyzer refactor upfront (Step 1). It's a 2-line backward-compatible change that eliminates the need for tempfiles entirely.
+3. **`mcp` gem version:** Development Gemfile pins `~> 0.17`. Runtime enforces minimum `0.6.0` with `Gem::Version` check. User-facing docs say `~> 0.6`. This mirrors RuboCop (dev Gemfile `~> 0.16`, runtime minimum `0.6.0`, docs say `~> 0.6`).
+4. **Tool definition style:** Use `::MCP::Tool.define` (factory with block), not `MCP::Tool` subclasses. Matches RuboCop. Simpler, tool blocks receive input schema properties as keyword args directly.
+5. **Namespace:** Use `Fastererer::MCP::Server` (matching `RuboCop::MCP::Server`), with `::` prefix on all gem references. Both reviewers flagged the collision risk — the `::` prefix is how RuboCop handles it in production.
+6. **Default filename for inline code:** Use `'example.rb'` when `source_code` is provided without `path`, matching RuboCop's convention (allows config pattern matching to work).
+7. **`server_context:` kwarg:** Not used. RuboCop's tool blocks don't accept it — they only receive input schema properties as keyword args. Our tools follow the same pattern.
