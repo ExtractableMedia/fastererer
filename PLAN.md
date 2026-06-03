@@ -256,6 +256,10 @@ end
 
 The `require_relative 'mcp/server'` is lazy — the `mcp` gem is only loaded when `--mcp` is actually passed. This matches RuboCop's pattern where their CLI command does `require_relative '../../mcp/server'` inside the `run` method.
 
+### Recommended invocation
+
+`--mcp` is the raw flag; the command README examples and `.mcp.json` snippets should recommend is `bundle exec fastererer --mcp` (e.g. `claude mcp add fastererer -- bundle exec fastererer --mcp`). Run through Bundler — not the bare `fastererer` exe — so the server uses the version pinned in the project's `Gemfile.lock`; with multiple versions installed the bare exe would activate the newest, which may not match the project, and fastererer's offense set shifts between releases. This mirrors RuboCop, whose docs recommend `bundle exec rubocop --mcp`. The ~480ms startup is paid once per session (Bundler resolution + Ruby boot, intrinsic to any Ruby stdio MCP server), so version-correctness wins over shaving it.
+
 ## Step 4: Add tests
 
 **New files:**
