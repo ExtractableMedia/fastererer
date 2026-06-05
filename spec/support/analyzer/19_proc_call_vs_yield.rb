@@ -22,3 +22,8 @@ end
 def call_meeee(number, zumba, &block)
   block.call(number)
 end
+
+# Should detect the block call invoked with safe navigation.
+def call_safe(number, zumba, &block)
+  block&.call
+end

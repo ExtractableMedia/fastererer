@@ -1,13 +1,17 @@
 # frozen_string_literal: true
 
-require 'ruby_parser'
+require 'prism'
 
 module Fastererer
-  class Parser
-    PARSER_CLASS = RubyParser
+  class ParseError < StandardError; end
 
+  # Single seam around Prism.parse: returns the AST root or raises ParseError
+  class Parser
     def self.parse(ruby_code)
-      PARSER_CLASS.for_current_ruby.parse(ruby_code)
+      result = Prism.parse(ruby_code)
+      raise ParseError, result.errors.map(&:message).join('; ') if result.failure?
+
+      result.value
     end
   end
 end

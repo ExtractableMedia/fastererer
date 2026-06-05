@@ -11,3 +11,7 @@ end
 def name=(value)
 	@name = [value]
 end
+
+def name=(value, &block)
+	@name = value
+end

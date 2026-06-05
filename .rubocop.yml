@@ -17,6 +17,9 @@ AllCops:
 Layout/LineLength:
   Max: 100
 
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
 # Analyzer specs are organized by speedup scenario (one file per scenario) rather than by class,
 # so their paths intentionally diverge from the described class name.
 RSpec/SpecFilePathFormat:
@@ -25,3 +28,6 @@ RSpec/SpecFilePathFormat:
 
 Style/Documentation:
   Enabled: false
+
+Style/EmptyMethod:
+  EnforcedStyle: expanded

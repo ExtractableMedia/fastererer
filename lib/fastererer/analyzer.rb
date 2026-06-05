@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require 'prism'
 require 'fastererer/method_definition'
 require 'fastererer/method_call'
 require 'fastererer/rescue_call'
+require 'fastererer/offense'
 require 'fastererer/offense_collector'
 require 'fastererer/parser'
 require 'fastererer/scanners/method_call_scanner'
@@ -20,75 +22,47 @@ module Fastererer
     end
 
     def scan
-      sexp_tree = Fastererer::Parser.parse(@file_content)
-      traverse_sexp_tree(sexp_tree)
+      root_node = Fastererer::Parser.parse(@file_content)
+      root_node.accept(AnalyzerVisitor.new(errors))
     end
 
     def errors
       @errors ||= Fastererer::OffenseCollector.new
     end
+  end
+
+  class AnalyzerVisitor < Prism::Visitor
+    def initialize(offenses)
+      super()
+      @offenses = offenses
+    end
+
+    def visit_call_node(node)
+      collect(MethodCallScanner.new(node))
+      super
+    end
+
+    def visit_def_node(node)
+      collect(MethodDefinitionScanner.new(node))
+      super
+    end
+
+    def visit_for_node(node)
+      @offenses.push(Fastererer::Offense.new(:for_loop_vs_each, node.location.start_line))
+      super
+    end
+
+    def visit_rescue_node(node)
+      collect(RescueCallScanner.new(node))
+      super
+    end
 
     private
 
-    def traverse_sexp_tree(sexp_tree)
-      return unless sexp_tree.is_a?(Sexp)
-
-      token = sexp_tree.first
-      scan_by_token(token, sexp_tree)
-
-      if %i[call iter].include?(token)
-        descend_into_call(sexp_tree)
-      else
-        sexp_tree.each { |element| traverse_sexp_tree(element) }
-      end
-    end
-
-    def descend_into_call(sexp_tree)
-      method_call = MethodCall.new(sexp_tree)
-      traverse_sexp_tree(method_call.receiver_element) if method_call.receiver_element
-      traverse_sexp_tree(method_call.arguments_element)
-      traverse_sexp_tree(method_call.block_body) if method_call.block?
-    end
-
-    def scan_by_token(token, element)
-      case token
-      when :defn
-        scan_method_definitions(element)
-      when :call, :iter
-        scan_method_calls(element)
-      when :for
-        scan_for_loop(element)
-      when :resbody
-        scan_rescue(element)
-      end
-    end
-
-    def scan_method_definitions(element)
-      method_definition_scanner = MethodDefinitionScanner.new(element)
-
-      return unless method_definition_scanner.offense_detected?
-
-      errors.push(method_definition_scanner.offense)
-    end
-
-    def scan_method_calls(element)
-      method_call_scanner = MethodCallScanner.new(element)
-
-      return unless method_call_scanner.offense_detected?
-
-      errors.push(method_call_scanner.offense)
-    end
-
-    def scan_for_loop(element)
-      errors.push(Fastererer::Offense.new(:for_loop_vs_each, element.line))
-    end
-
-    def scan_rescue(element)
-      rescue_call_scanner = RescueCallScanner.new(element)
-
-      return unless rescue_call_scanner.offense_detected?
-
-      errors.push(rescue_call_scanner.offense)
+    def collect(scanner)
+      @offenses.push(scanner.offense) if scanner.offense_detected?
     end
   end
+
+  private_constant :AnalyzerVisitor
 end
