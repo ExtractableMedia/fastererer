@@ -1,22 +1,37 @@
 # frozen_string_literal: true
 
+require 'prism'
+
 module Fastererer
   class MethodDefinition
-    # Exposed for testing purposes.
-    attr_reader :element, :method_name, :block_argument_name, :body, :arguments
+    PARAMETER_CATEGORIES = %i[requireds optionals rest posts keywords keyword_rest block].freeze
+    private_constant :PARAMETER_CATEGORIES
 
+    attr_reader :element
+
+    def initialize(node)
+      @element = node
+    end
+
+    def method_name
+      element.name
+    end
     alias name method_name
 
-    def initialize(element)
-      @element = element # Ripper element
-      set_method_name
-      set_body
-      set_arguments
-      set_block_argument_name
+    def body
+      @body ||= statement_body
+    end
+
+    def arguments
+      @arguments ||= parameter_nodes.map { |node| MethodDefinitionArgument.new(node) }
+    end
+
+    def block_argument_name
+      block_parameter&.name
     end
 
     def block?
-      !!@block_argument_name
+      !block_parameter.nil?
     end
 
     def setter?
@@ -25,70 +40,68 @@ module Fastererer
 
     private
 
-    def arguments_element
-      element[2].drop(1) || []
+    def statement_body
+      body_node = element.body
+      # A rescue/ensure body is a BeginNode wrapping the statements; #statements may be nil
+      body_node = body_node.statements if body_node.is_a?(Prism::BeginNode)
+      body_node.is_a?(Prism::StatementsNode) ? body_node.body : []
     end
 
-    def set_method_name
-      @method_name = @element[1]
+    def parameter_nodes
+      params = element.parameters
+      return [] unless params
+
+      PARAMETER_CATEGORIES.flat_map { |category| Array(params.public_send(category)) }
     end
 
-    def set_arguments
-      @arguments = arguments_element.map do |argument_element|
-        MethodDefinitionArgument.new(argument_element)
-      end
-    end
+    def block_parameter
+      params = element.parameters
+      return unless params&.block.is_a?(Prism::BlockParameterNode)
 
-    def set_body
-      @body = @element[3..]
-    end
-
-    def set_block_argument_name
-      return unless last_argument_element.to_s.start_with?('&')
-
-      @block_argument_name = last_argument_element.to_s.delete_prefix('&').to_sym
-    end
-
-    def last_argument_element
-      arguments_element.last
+      params.block
     end
   end
 
   class MethodDefinitionArgument
-    attr_reader :element, :name, :type
+    attr_reader :element
 
-    def initialize(element)
-      @element = element
-      set_name
-      set_argument_type
+    def initialize(node)
+      @element = node
+    end
+
+    # Prism param nodes expose #name (nil when anonymous); MultiTargetNode has none
+    def name
+      element.respond_to?(:name) ? element.name : nil
+    end
+
+    def type
+      @type ||= argument_type
     end
 
     def regular_argument?
-      @type == :regular_argument
+      type == :regular_argument
     end
 
     def default_argument?
-      @type == :default_argument
+      type == :default_argument
     end
 
     def keyword_argument?
-      @type == :keyword_argument
+      type == :keyword_argument
     end
 
     private
 
-    def set_name
-      @name = element.is_a?(Symbol) ? element : element[1]
-    end
-
-    def set_argument_type
-      @type = if element.is_a?(Symbol)
-                :regular_argument
-              elsif element.is_a?(Sexp) && element.sexp_type == :lasgn
-                :default_argument
-              elsif element.is_a?(Sexp) && element.sexp_type == :kwarg
-                :keyword_argument
-              end
+    def argument_type
+      case element
+      when Prism::RequiredParameterNode
+        :regular_argument
+      when Prism::OptionalParameterNode
+        :default_argument
+      when Prism::RequiredKeywordParameterNode,
+           Prism::OptionalKeywordParameterNode
+        :keyword_argument
+      end
     end
   end
 end

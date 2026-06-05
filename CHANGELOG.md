@@ -8,6 +8,25 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 
 ## [Unreleased]
 
+### Changed
+
+- [#9]: Migrate from `ruby_parser` to Ruby's native Prism parser. Prism ships with Ruby itself,
+  so this drops the `ruby_parser`, `sexp_processor`, and `racc` dependencies and keeps the
+  analyzer in step with current and future Ruby syntax, including Ruby 4.0.
+
+### Added
+
+- [#9]: Detect speedups reached through a safe-navigation chain (e.g. `arr&.first`,
+  `arr&.select { … }.first`), which the previous S-expression scanner skipped.
+- [#9]: Detect speedups inside `rescue` bodies — getter-vs-`attr_reader`,
+  setter-vs-`attr_writer`, and proc-call-vs-`yield` offenses are now scanned in rescue clauses.
+
+### Fixed
+
+- [#9]: Block calls inside a nested scope (a singleton class or a nested method definition) are
+  no longer misattributed to the enclosing method.
+- [#9]: Unparseable source now raises a clear error instead of silently reporting no offenses.
+
 ## [0.12.0] - 2026-05-18
 
 ### Added
@@ -110,4 +129,5 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 [0.12.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.11.0...v0.12.0
 [#1]: https://github.com/ExtractableMedia/fastererer/pull/1
 [#2]: https://github.com/ExtractableMedia/fastererer/pull/2
+[#9]: https://github.com/ExtractableMedia/fastererer/pull/9
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42

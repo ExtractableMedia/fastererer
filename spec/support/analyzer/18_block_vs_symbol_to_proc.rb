@@ -45,3 +45,7 @@ instance_eval { |object| object.to_s }
 proc { |rule| rule.should_use_symbol }
 lambda { |rule| rule.should_use_symbol }
 ->(obj) { obj.cannot_use_symbol }
+
+numbers.map { |number = 0| number.to_s }
+numbers.map { |*numbers| numbers.to_s }
+numbers.map { |number| number&.to_s }

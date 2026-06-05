@@ -1,95 +1,117 @@
 # frozen_string_literal: true
 
+require 'prism'
+
 module Fastererer
   class MethodCall
-    attr_reader :element, :receiver, :method_name, :arguments, :block_body, :block_argument_names
+    attr_reader :element
 
-    alias name method_name
+    def self.build(node)
+      node.is_a?(Prism::LambdaNode) ? LambdaCall.new(node) : new(node)
+    end
 
-    def initialize(element)
-      @element = element
-      set_call_element
-      set_receiver
-      set_method_name
-      set_arguments
-      set_block_presence
-      set_block_body
-      set_block_argument_names
+    def initialize(node)
+      @element = node
+    end
+
+    def receiver
+      @receiver ||= ReceiverFactory.build(element.receiver)
+    end
+
+    def method_name
+      element.name
+    end
+
+    def name
+      method_name
+    end
+
+    def arguments
+      @arguments ||= argument_nodes.map { |argument| Argument.new(argument) }
+    end
+
+    def block_body
+      @block_body ||= block_statements
+    end
+
+    def block_argument_names
+      @block_argument_names ||= positional_block_parameter_names
     end
 
     def block?
-      @block_present || false
-    end
-
-    def receiver_element
-      call_element[1]
-    end
-
-    def arguments_element
-      call_element.sexp_body(3) || []
+      !block_node.nil?
     end
 
     def lambda_literal?
-      call_element.sexp_type == :lambda
+      false
     end
 
     private
 
-    attr_reader :call_element
-
-    # TODO: explanation
-    def set_call_element
-      @call_element = case element.sexp_type
-                      when :call
-                        @element
-                      when :iter
-                        @element[1]
-                      end
+    def block_node
+      @block_node ||= element.block
     end
 
-    def set_receiver
-      @receiver = ReceiverFactory.new(receiver_element)
+    def argument_nodes
+      element.arguments&.arguments || []
     end
 
-    def set_method_name
-      @method_name = call_element[2]
+    def block_statements
+      return unless block_node.is_a?(Prism::BlockNode)
+
+      body = block_node.body
+      body.body if body.is_a?(Prism::StatementsNode)
     end
 
-    def set_arguments
-      @arguments = arguments_element.map { |argument| Argument.new(argument) }
-    end
+    # Only single positional params convert to &:sym, so a splat or keyword param must not count
+    # toward block_argument_names.one?
+    def positional_block_parameter_names
+      return [] unless block_node.is_a?(Prism::BlockNode)
 
-    def set_block_presence
-      if element.sexp_type == :iter || (arguments.last && arguments.last.type == :block_pass)
-        @block_present = true
-      end
-    end
+      params = block_node.parameters
+      return [] unless params.is_a?(Prism::BlockParametersNode) && params.parameters
 
-    def set_block_body
-      @block_body = element[3] if block?
-    end
-
-    # TODO: write specs for lambdas and procs
-    def set_block_argument_names
-      @block_argument_names = if block? && element[2].is_a?(Sexp) # HACK: for lambdas
-                                element[2].drop(1).map { |argument| argument }
-                              end || []
+      positional = params.parameters.requireds + params.parameters.optionals
+      positional.map { |param| param.is_a?(Prism::MultiTargetNode) ? nil : param.name }
     end
   end
 
-  # For now, used for determening if the
-  # receiver is a reference or a method call.
-  class ReceiverFactory
-    def self.new(receiver_info)
-      return unless receiver_info.is_a?(Sexp)
+  # A `-> {}` lambda literal. Checks ignore it, so its call attributes are inert
+  class LambdaCall < MethodCall
+    def receiver = nil
+    def method_name = :lambda
+    def arguments = []
+    def block_body = nil
+    def block_argument_names = []
+    def block? = true
+    def lambda_literal? = true
+  end
 
-      case receiver_info.sexp_type
-      when :lvar
-        VariableReference.new(receiver_info)
-      when :call, :iter
-        MethodCall.new(receiver_info)
-      when :array, :dot2, :dot3, :lit
-        Primitive.new(receiver_info)
+  module ReceiverFactory
+    PRIMITIVE_NODE_TYPES = [Prism::ArrayNode, Prism::RangeNode, Prism::IntegerNode,
+                            Prism::FloatNode, Prism::SymbolNode, Prism::StringNode].freeze
+
+    def self.build(node)
+      return unless node
+
+      node = unwrap_parentheses(node)
+      case node
+      # A ConstantPathNode's #name is the unqualified tail only (Foo::Bar => :Bar), which is all
+      # the symbol-to-proc check needs; revisit if a check ever needs the fully-qualified path.
+      when Prism::LocalVariableReadNode, Prism::ConstantReadNode,
+           Prism::ConstantPathNode then VariableReference.new(node)
+      when Prism::CallNode then MethodCall.build(node)
+      when *PRIMITIVE_NODE_TYPES then Primitive.new(node)
+      end
+    end
+
+    def self.unwrap_parentheses(node)
+      if node.is_a?(Prism::ParenthesesNode) &&
+         node.body.is_a?(Prism::StatementsNode) &&
+         node.body.body.size == 1
+        node.body.body.first
+      else
+        node
       end
     end
   end
@@ -97,45 +119,61 @@ module Fastererer
   class VariableReference
     attr_reader :name
 
-    def initialize(reference_info)
-      @reference_info = reference_info
-      @name = reference_info[1]
+    def initialize(node)
+      @name = node.name
     end
   end
 
   class Argument
     attr_reader :element
 
-    def initialize(element)
-      @element = element
+    def initialize(node)
+      @element = node
     end
 
+    TYPE_BY_NODE_CLASS = {
+      Prism::KeywordHashNode => :hash,
+      Prism::HashNode => :hash,
+      Prism::StringNode => :string,
+      Prism::IntegerNode => :integer,
+      Prism::SymbolNode => :symbol,
+      Prism::FloatNode => :float,
+      Prism::RegularExpressionNode => :regexp,
+      Prism::NilNode => :nil,
+      Prism::TrueNode => :boolean,
+      Prism::FalseNode => :boolean,
+      Prism::LocalVariableReadNode => :variable,
+      Prism::CallNode => :method_call
+    }.freeze
+
     def type
-      @type ||= @element[0]
+      @type ||= TYPE_BY_NODE_CLASS[element.class] || :unknown
     end
 
     def value
-      @value ||= @element[1]
+      return @value if defined?(@value)
+
+      @value = case element
+               when Prism::StringNode then element.unescaped
+               when Prism::IntegerNode, Prism::FloatNode then element.value
+               when Prism::SymbolNode then element.unescaped.to_sym
+               end
     end
   end
 
   class Primitive
     attr_reader :element
 
-    def initialize(element)
-      @element = element
-    end
-
-    def type
-      @type ||= @element[0]
+    def initialize(node)
+      @element = node
     end
 
     def range?
-      %i[dot2 dot3 lit].include?(type)
+      element.is_a?(Prism::RangeNode)
     end
 
     def array?
-      type == :array
+      element.is_a?(Prism::ArrayNode)
     end
   end
 end

@@ -312,9 +312,47 @@ describe Fastererer::FileTraverser do
 
     let(:file_traverser) { described_class.new('.') }
 
-    it 'has errors' do
+    it 'has errors', :aggregate_failures do
+      expect(file_traverser.parse_error_paths.count).to eq(1)
       expect(file_traverser.parse_error_paths.first)
-        .to start_with('user.rb - RubyParser::SyntaxError - unterminated')
+        .to start_with('user.rb - Fastererer::ParseError - ')
+    end
+  end
+
+  describe 'unexpected scan errors' do
+    let(:file_traverser) { described_class.new('.') }
+    let(:analyzer) { instance_double(Fastererer::Analyzer) }
+
+    before do
+      create_file('user.rb', 'puts 1')
+      allow(Fastererer::Analyzer).to receive(:new).and_return(analyzer)
+    end
+
+    it 'does not swallow programming errors' do
+      allow(analyzer).to receive(:scan).and_raise(NoMethodError, 'boom')
+
+      expect { file_traverser.traverse }.to raise_error(NoMethodError, 'boom')
+    end
+
+    it 'reports a file-read error as unprocessable instead of raising', :aggregate_failures do
+      allow(analyzer).to receive(:scan).and_raise(Errno::EACCES)
+
+      expect { file_traverser.traverse }.not_to raise_error
+      expect(file_traverser.parse_error_paths.first).to include('Errno::EACCES')
+    end
+
+    it 'reports a stack overflow as unprocessable instead of aborting', :aggregate_failures do
+      allow(analyzer).to receive(:scan).and_raise(SystemStackError)
+
+      expect { file_traverser.traverse }.not_to raise_error
+      expect(file_traverser.parse_error_paths.first).to include('SystemStackError')
+    end
+
+    it 'reports an encoding error as unprocessable instead of aborting', :aggregate_failures do
+      allow(analyzer).to receive(:scan).and_raise(Encoding::CompatibilityError)
+
+      expect { file_traverser.traverse }.not_to raise_error
+      expect(file_traverser.parse_error_paths.first).to include('Encoding::CompatibilityError')
     end
   end
 
