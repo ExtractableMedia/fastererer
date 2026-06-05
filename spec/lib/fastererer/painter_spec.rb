@@ -96,5 +96,19 @@ describe Fastererer::Painter do
         expect { described_class.paint('hello', :purple) }.to raise_error(ArgumentError)
       end
     end
+
+    describe 'color code mapping' do
+      let(:ansi_codes) { { red: "\e[31mx\e[0m", green: "\e[32mx\e[0m", magenta: "\e[35mx\e[0m" } }
+
+      before { allow($stdout).to receive(:tty?).and_return(true) }
+
+      around { |example| with_env('NO_COLOR', nil) { example.run } }
+
+      it 'wraps each color in the correct ANSI code', :aggregate_failures do
+        ansi_codes.each do |color, expected|
+          expect(described_class.paint('x', color)).to eq(expected)
+        end
+      end
+    end
   end
 end

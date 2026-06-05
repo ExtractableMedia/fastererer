@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   root_docs = %w[README.md CHANGELOG.md LICENSE.txt]
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").select do |f|
-      f.start_with?('lib/', 'exe/') || root_docs.include?(f)
+      f.start_with?('lib/', 'exe/', 'config/') || root_docs.include?(f)
     end
   end
 
