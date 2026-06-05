@@ -20,6 +20,7 @@ module Fastererer
       flatten: :check_flatten_offense,
       fetch: :check_fetch_offense,
       merge!: :check_merge_bang_offense,
+      update: :check_update_offense,
       last: :check_last_offense,
       include?: :check_range_include_offense
     }.freeze
@@ -115,10 +116,14 @@ module Fastererer
       return unless method_call.arguments.one?
 
       first_argument = method_call.arguments.first
-      return unless first_argument.type == :hash
-      return unless first_argument.element.elements.one?
+      return unless first_argument.type == :hash && first_argument.element.elements.one?
 
       add_offense(:hash_merge_bang_vs_hash_brackets)
+    end
+
+    # Hash#update is a merge! alias but heavily overloaded, so require a provably-Hash receiver
+    def check_update_offense
+      check_merge_bang_offense if method_call.receiver&.hash?
     end
 
     def check_last_offense

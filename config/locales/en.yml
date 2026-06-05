@@ -35,7 +35,7 @@ en:
         description: "Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block"
         url: "https://github.com/fastruby/fast-ruby#hasheach_key-instead-of-hashkeyseach-code"
       hash_merge_bang_vs_hash_brackets:
-        description: "Hash#merge! with one argument is slower than Hash#[]"
+        description: "Hash#merge!/#update with one argument is slower than Hash#[]"
         url: "https://github.com/fastruby/fast-ruby#hashmerge-vs-hash-code"
       block_vs_symbol_to_proc:
         description: "Calling argumentless methods within blocks is slower than using symbol to proc"
