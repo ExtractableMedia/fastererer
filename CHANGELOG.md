@@ -8,6 +8,10 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-05
+
+First stable release of `fastererer` after the fork.
+
 ### Changed
 
 - [#9]: Migrate from `ruby_parser` to Ruby's native Prism parser. Prism ships with Ruby itself,
@@ -132,7 +136,8 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 
 [Keep a Changelog]: https://keepachangelog.com
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
-[Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.12.0...v1.0.0
 [0.12.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.11.0...v0.12.0
 [#1]: https://github.com/ExtractableMedia/fastererer/pull/1
 [#2]: https://github.com/ExtractableMedia/fastererer/pull/2
