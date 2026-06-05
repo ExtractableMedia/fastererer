@@ -46,6 +46,17 @@ module Fastererer
       false
     end
 
+    # Provably a Hash: bare `Hash.new`/`Hash[...]` (any args — every `Hash[...]` yields a Hash),
+    # not qualified `Foo::Hash`. The is_a?(ConstantReadNode) check is load-bearing:
+    # ConstantPathNode#name is :Hash too, so the type (not the name) excludes qualified constants.
+    # unwrap_parentheses lets `(Hash).new` match, as the receiver factory normalizes its input.
+    def hash?
+      return false unless %i[new []].include?(method_name)
+
+      constant = ReceiverFactory.unwrap_parentheses(element.receiver)
+      constant.is_a?(Prism::ConstantReadNode) && constant.name == :Hash
+    end
+
     private
 
     def block_node
@@ -89,7 +100,8 @@ module Fastererer
 
   module ReceiverFactory
     PRIMITIVE_NODE_TYPES = [Prism::ArrayNode, Prism::RangeNode, Prism::IntegerNode,
-                            Prism::FloatNode, Prism::SymbolNode, Prism::StringNode].freeze
+                            Prism::FloatNode, Prism::SymbolNode, Prism::StringNode,
+                            Prism::HashNode].freeze
 
     def self.build(node)
       return unless node
@@ -105,6 +117,7 @@ module Fastererer
       end
     end
 
+    # Peels a single parenthesis level, so `((x))` stays wrapped — matches how callers normalize
     def self.unwrap_parentheses(node)
       if node.is_a?(Prism::ParenthesesNode) &&
          node.body.is_a?(Prism::StatementsNode) &&
@@ -121,6 +134,11 @@ module Fastererer
 
     def initialize(node)
       @name = node.name
+    end
+
+    # A bare local/constant reference can't be proven to hold a Hash
+    def hash?
+      false
     end
   end
 
@@ -174,6 +192,10 @@ module Fastererer
 
     def array?
       element.is_a?(Prism::ArrayNode)
+    end
+
+    def hash?
+      element.is_a?(Prism::HashNode)
     end
   end
 end

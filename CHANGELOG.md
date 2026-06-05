@@ -29,6 +29,10 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 - [#9]: Block calls inside a nested scope (a singleton class or a nested method definition) are
   no longer misattributed to the enclosing method.
 - [#9]: Unparseable source now raises a clear error instead of silently reporting no offenses.
+- [#28]: `hash_merge_bang_vs_hash_brackets` now flags `Hash#update`, an alias of `Hash#merge!`, but
+  only when the receiver is provably a Hash (a `{}` literal, `Hash.new`, or `Hash[...]`). Because
+  `update` is also defined on `ActiveRecord`, `ActionController::Parameters`, and others, a bare
+  `obj.update(k => v)` is left untouched to avoid false positives.
 
 ## [0.12.0] - 2026-05-18
 
@@ -134,4 +138,5 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 [#2]: https://github.com/ExtractableMedia/fastererer/pull/2
 [#9]: https://github.com/ExtractableMedia/fastererer/pull/9
 [#15]: https://github.com/ExtractableMedia/fastererer/pull/15
+[#28]: https://github.com/ExtractableMedia/fastererer/issues/28
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42

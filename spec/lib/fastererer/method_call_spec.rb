@@ -695,5 +695,87 @@ describe Fastererer::MethodCall do
         expect(method_call.receiver).not_to be_array
       end
     end
+
+    context 'with a hash receiver' do
+      let(:code) { '{}.update(a: 1)' }
+
+      it 'detects hash', :aggregate_failures do
+        expect(method_call.receiver).to be_a(Fastererer::Primitive)
+        expect(method_call.receiver).to be_hash
+        expect(method_call.receiver).not_to be_array
+      end
+    end
+  end
+
+  describe '#hash?' do
+    context 'with a Hash.new receiver' do
+      let(:code) { 'Hash.new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).to be_hash }
+    end
+
+    context 'with a Hash[...] receiver' do
+      let(:code) { 'Hash[a: 1].update(b: 2)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).to be_hash }
+    end
+
+    context 'with a positional Hash[...] receiver' do
+      let(:code) { 'Hash["a", 1].update(b: 2)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).to be_hash }
+    end
+
+    context 'with a parenthesized Hash constant receiver' do
+      let(:code) { '(Hash).new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).to be_hash }
+    end
+
+    context 'with a parenthesized qualified Hash constant receiver' do
+      let(:code) { '(Foo::Hash).new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
+
+    context 'with a parenthesized non-Hash constant receiver' do
+      let(:code) { '(Set).new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
+
+    context 'with a non-Hash constant receiver' do
+      let(:code) { 'Set.new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
+
+    context 'with a non-new/[] method on Hash' do
+      let(:code) { 'Hash.foo.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
+
+    context 'with a qualified Hash constant receiver' do
+      let(:code) { 'Foo::Hash.new.update(a: 1)' }
+      let(:call_element) { first_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
+
+    context 'with a bare variable receiver' do
+      let(:code) { "h = {}\nh.update(a: 1)" }
+      let(:call_element) { second_statement }
+
+      it { expect(method_call.receiver).not_to be_hash }
+    end
   end
 end
