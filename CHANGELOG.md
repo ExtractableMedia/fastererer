@@ -20,6 +20,9 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
   `arr&.select { … }.first`), which the previous S-expression scanner skipped.
 - [#9]: Detect speedups inside `rescue` bodies — getter-vs-`attr_reader`,
   setter-vs-`attr_writer`, and proc-call-vs-`yield` offenses are now scanned in rescue clauses.
+- [#15]: Offense output now mirrors RuboCop's format with a `Performance/RuleName` rule name and a
+  [fast-ruby](https://github.com/fastruby/fast-ruby) documentation link, e.g.
+  `path:line: W: Performance/ForLoopVsEach: For loop is slower than using each. (url)`.
 
 ### Fixed
 
@@ -130,4 +133,5 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 [#1]: https://github.com/ExtractableMedia/fastererer/pull/1
 [#2]: https://github.com/ExtractableMedia/fastererer/pull/2
 [#9]: https://github.com/ExtractableMedia/fastererer/pull/9
+[#15]: https://github.com/ExtractableMedia/fastererer/pull/15
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42

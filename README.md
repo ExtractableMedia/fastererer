@@ -53,19 +53,27 @@ Fastererer exits with status `1` when offenses are found, making it suitable for
 
 ## Example output
 
+Each offense is reported on a single line, following the same shape as
+RuboCop and its plugins (`path:line: SEVERITY: Department/RuleName: message.
+(url)`), so the rule name and a link to documentation are always visible:
+
 ```text
-app/models/post.rb:57 Array#select.first is slower than Array#detect.
-app/models/post.rb:61 Array#select.first is slower than Array#detect.
+app/models/post.rb:57: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
+app/models/post.rb:61: W: Performance/SelectFirstVsDetect: Array#select.first is slower than Array#detect. (https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code)
 
-db/seeds/cities.rb:15 Hash#keys.each is slower than Hash#each_key.
-db/seeds/cities.rb:33 Hash#keys.each is slower than Hash#each_key.
+db/seeds/cities.rb:15: W: Performance/KeysEachVsEachKey: Hash#keys.each is slower than Hash#each_key. N.B. Hash#each_key cannot be used if the hash is modified during the each block. (https://github.com/fastruby/fast-ruby#hasheach_key-instead-of-hashkeyseach-code)
 
-test/options_test.rb:84 Hash#merge! with one argument is slower than Hash#[].
+test/options_test.rb:84: W: Performance/HashMergeBangVsHashBrackets: Hash#merge! with one argument is slower than Hash#[]. (https://github.com/fastruby/fast-ruby#hashmerge-vs-hash-code)
 
-test/module_test.rb:272 Don't rescue NoMethodError, rather check with respond_to?.
+test/module_test.rb:272: W: Performance/RescueVsRespondTo: Don't rescue NoMethodError, rather check with respond_to?. (https://github.com/fastruby/fast-ruby#beginrescue-vs-respond_to-for-control-flow-code)
 
-spec/cache/mem_cache_store_spec.rb:161 Using tr is faster than gsub when replacing a single character in a string with another single character.
+spec/cache/mem_cache_store_spec.rb:161: W: Performance/GsubVsTr: Using tr is faster than gsub when replacing a single character in a string with another single character. (https://github.com/fastruby/fast-ruby#stringgsub-vs-stringtr-code)
 ```
+
+The rule name (e.g. `Performance/SelectFirstVsDetect`) is derived from the
+underlying snake_case rule key (e.g. `select_first_vs_detect`), which is what
+you reference in `.fastererer.yml` under `speedups:` to disable a rule.
+Descriptions and documentation URLs live in `config/locales/en.yml`.
 
 ## Configuration
 

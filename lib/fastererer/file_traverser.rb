@@ -5,6 +5,7 @@ require 'English'
 
 require_relative 'analyzer'
 require_relative 'config'
+require_relative 'explanation'
 require_relative 'painter'
 
 module Fastererer
@@ -81,14 +82,20 @@ module Fastererer
     end
 
     def output(analyzer)
-      offenses_grouped_by_type(analyzer).each do |error_group_name, error_occurences|
-        error_occurences.map(&:line_number).each do |line|
+      offenses_grouped_by_type(analyzer).each_value do |error_occurrences|
+        explanation = error_occurrences.first.explanation
+
+        error_occurrences.map(&:line_number).each do |line|
           file_and_line = "#{analyzer.file_path}:#{line}"
-          print "#{Painter.paint(file_and_line, :red)} #{Fastererer::Offense::EXPLANATIONS[error_group_name]}.\n"
+          print "#{Painter.paint(file_and_line, :red)}: #{severity}: #{explanation}\n"
         end
       end
 
       print "\n"
+    end
+
+    def severity
+      @severity ||= Painter.paint('W', :magenta)
     end
 
     def offenses_grouped_by_type(analyzer)
