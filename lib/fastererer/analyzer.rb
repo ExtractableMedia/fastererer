@@ -8,8 +8,9 @@ require 'fastererer/offense'
 require 'fastererer/offense_collector'
 require 'fastererer/parser'
 require 'fastererer/scanners/method_call_scanner'
-require 'fastererer/scanners/rescue_call_scanner'
 require 'fastererer/scanners/method_definition_scanner'
+require 'fastererer/scanners/for_loop_scanner'
+require 'fastererer/scanners/rescue_call_scanner'
 
 module Fastererer
   class Analyzer
@@ -48,7 +49,7 @@ module Fastererer
     end
 
     def visit_for_node(node)
-      @offenses.push(Fastererer::Offense.new(:for_loop_vs_each, node.location.start_line))
+      collect(ForLoopScanner.new(node))
       super
     end
 
