@@ -5,8 +5,9 @@ require 'English'
 
 require_relative 'analyzer'
 require_relative 'config'
-require_relative 'explanation'
-require_relative 'painter'
+require_relative 'finding'
+require_relative 'report'
+require_relative 'formatters/text_formatter'
 
 module Fastererer
   class FileTraverser
@@ -15,19 +16,17 @@ module Fastererer
     EXCLUDE_PATHS_KEY = Config::EXCLUDE_PATHS_KEY
 
     attr_reader :config, :parse_error_paths
-    attr_accessor :offenses_total_count
 
-    def initialize(path)
+    def initialize(path, formatter: Formatters::TextFormatter.new)
       @path = Pathname(path || '.')
       @parse_error_paths = []
       @config = Config.new
-      @offenses_total_count = 0
+      @formatter = formatter
+      @findings = []
     end
 
     def traverse
-      traverse_files
-      output_parse_errors
-      output_statistics
+      @formatter.render(build_report)
     end
 
     def config_file
@@ -35,7 +34,7 @@ module Fastererer
     end
 
     def offenses_found?
-      !!offenses_found
+      findings.any?
     end
 
     def scannable_files
@@ -44,14 +43,22 @@ module Fastererer
 
     private
 
-    attr_accessor :offenses_found
+    attr_reader :formatter, :findings
 
-    def traverse_files
-      if @path.exist?
-        scannable_files.each { |ruby_file| scan_file(ruby_file) }
-      else
-        output_unable_to_find_file(@path)
-      end
+    def build_report
+      collect if @path.exist?
+
+      Report.new(
+        findings: findings,
+        files_inspected_count: scannable_files.count,
+        offenses_detected_count: findings.count,
+        unparsable_files: parse_error_paths,
+        missing_path: (@path.to_s unless @path.exist?)
+      )
+    end
+
+    def collect
+      scannable_files.each { |ruby_file| scan_file(ruby_file) }
     end
 
     def scan_file(path)
@@ -60,11 +67,21 @@ module Fastererer
     rescue Fastererer::ParseError, SystemCallError, SystemStackError, EncodingError => e
       parse_error_paths.push(ErrorData.new(path, e.class, e.message).to_s)
     else
-      if offenses_grouped_by_type(analyzer).any?
-        output(analyzer)
-        self.offenses_found = true
-        self.offenses_total_count += analyzer.errors.count
+      collect_findings(analyzer)
+    end
+
+    def collect_findings(analyzer)
+      reported_offenses(analyzer).each do |offense|
+        findings.push(Finding.from(offense, analyzer.file_path))
       end
+    end
+
+    def reported_offenses(analyzer)
+      analyzer.errors
+              .group_by(&:name)
+              .except(*ignored_speedups)
+              .values
+              .flatten
     end
 
     def all_files
@@ -79,46 +96,6 @@ module Fastererer
 
     def root_dir
       @root_dir ||= Pathname('.')
-    end
-
-    def output(analyzer)
-      offenses_grouped_by_type(analyzer).each_value do |error_occurrences|
-        explanation = error_occurrences.first.explanation
-
-        error_occurrences.map(&:line_number).each do |line|
-          file_and_line = "#{analyzer.file_path}:#{line}"
-          print "#{Painter.paint(file_and_line, :red)}: #{severity}: #{explanation}\n"
-        end
-      end
-
-      print "\n"
-    end
-
-    def severity
-      @severity ||= Painter.paint('W', :magenta)
-    end
-
-    def offenses_grouped_by_type(analyzer)
-      analyzer.errors.group_by(&:name).delete_if do |offense_name, _|
-        ignored_speedups.include?(offense_name)
-      end
-    end
-
-    def output_parse_errors
-      return if parse_error_paths.none?
-
-      puts 'Fastererer was unable to process some files. Unprocessable files were:'
-      puts '-----------------------------------------------------'
-      puts parse_error_paths
-      puts
-    end
-
-    def output_statistics
-      puts Statistics.new(self)
-    end
-
-    def output_unable_to_find_file(path)
-      puts Painter.paint("No such file or directory - #{path}", :red)
     end
 
     def ignored_speedups
@@ -137,55 +114,6 @@ module Fastererer
   ErrorData = Struct.new(:file_path, :error_class, :error_message) do
     def to_s
       "#{file_path} - #{error_class} - #{error_message}"
-    end
-  end
-
-  class Statistics
-    def initialize(traverser)
-      @files_inspected_count  = traverser.scannable_files.count
-      @offenses_found_count   = traverser.offenses_total_count
-      @unparsable_files_count = traverser.parse_error_paths.count
-    end
-
-    def to_s
-      [
-        inspected_files_output,
-        offenses_found_output,
-        unparsable_files_output
-      ].compact.join(', ')
-    end
-
-    def inspected_files_output
-      Painter.paint(
-        "#{@files_inspected_count} #{pluralize(@files_inspected_count, 'file')} inspected", :green
-      )
-    end
-
-    def offenses_found_output
-      color = @offenses_found_count.zero? ? :green : :red
-
-      Painter.paint(
-        "#{@offenses_found_count} #{pluralize(@offenses_found_count, 'offense')} detected", color
-      )
-    end
-
-    def unparsable_files_output
-      return if @unparsable_files_count.zero?
-
-      Painter.paint(
-        "#{@unparsable_files_count} unparsable #{pluralize(@unparsable_files_count, 'file')} found",
-        :red
-      )
-    end
-
-    def pluralize(count, singular, plural = nil)
-      if count == 1
-        singular.to_s
-      elsif plural
-        plural.to_s
-      else
-        "#{singular}s"
-      end
     end
   end
 end
