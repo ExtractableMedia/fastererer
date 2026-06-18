@@ -8,6 +8,13 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 
 ## [Unreleased]
 
+### Added
+
+- [#40]: A `-f`/`--format` flag with machine-readable output formats alongside the default `text`:
+  `json` (one document with a run `summary` and a flat `offenses` array) and `rdjsonl` (the
+  reviewdog Diagnostic Format, one record per offense, ready to pipe into reviewdog for inline PR
+  comments). Machine formats write only their payload to stdout and route diagnostics to stderr.
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of `fastererer` after the fork.
@@ -144,4 +151,5 @@ First stable release of `fastererer` after the fork.
 [#9]: https://github.com/ExtractableMedia/fastererer/pull/9
 [#15]: https://github.com/ExtractableMedia/fastererer/pull/15
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
+[#40]: https://github.com/ExtractableMedia/fastererer/issues/40
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42

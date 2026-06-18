@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'open3'
+require 'json'
 
 # This spec exercises the executable as a black box (shells out to
 # `exe/fastererer` and asserts on exit codes), so its subject is the
@@ -56,6 +58,30 @@ describe 'Fastererer CLI' do
     it 'auto-disables color when --no-color is passed' do
       output = `#{fasterer_bin} --no-color`
       expect(output).not_to include("\e[")
+    end
+  end
+
+  describe 'format option' do
+    before { create_file('user.rb', '[].shuffle.first') }
+
+    it 'emits valid JSON on stdout with --format=json' do
+      stdout, _stderr, status = Open3.capture3(fasterer_bin, '--format', 'json')
+      aggregate_failures do
+        expect { JSON.parse(stdout) }.not_to raise_error
+        expect(status.exitstatus).to eq(1)
+      end
+    end
+
+    it 'emits a reviewdog record on stdout with -f rdjsonl' do
+      stdout, = Open3.capture3(fasterer_bin, '-f', 'rdjsonl')
+      expect(JSON.parse(stdout.lines.first)).to include('severity' => 'WARNING')
+    end
+
+    it 'reports an unknown format on stderr and exits non-zero', :aggregate_failures do
+      stdout, stderr, status = Open3.capture3(fasterer_bin, '--format', 'bogus')
+      expect(stdout).to be_empty
+      expect(stderr).to include('Unknown format')
+      expect(status.exitstatus).to eq(1)
     end
   end
 
