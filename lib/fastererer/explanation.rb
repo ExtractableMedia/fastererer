@@ -29,8 +29,14 @@ module Fastererer
       @rule_name ||= RuleName.from(offense_name)
     end
 
-    def to_s
+    # The single source of truth for the rubocop-style line, shared with the text
+    # formatter so its output stays byte-for-byte identical to this.
+    def self.format_line(rule_name, description, url)
       "#{rule_name}: #{description.delete_suffix('.')}. (#{url})"
+    end
+
+    def to_s
+      self.class.format_line(rule_name, description, url)
     end
 
     private

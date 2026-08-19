@@ -7,6 +7,7 @@ SimpleCov.start do
   add_filter '/vendor/'
 end
 
+require 'stringio'
 require 'fastererer'
 require 'fastererer/cli'
 

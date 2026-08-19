@@ -75,6 +75,42 @@ underlying snake_case rule key (e.g. `select_first_vs_detect`), which is what
 you reference in `.fastererer.yml` under `speedups:` to disable a rule.
 Descriptions and documentation URLs live in `config/locales/en.yml`.
 
+## Output formats
+
+By default fastererer prints the human-readable text shown above. Pass `-f`/`--format` to emit
+machine-readable output for editors, log aggregators, or CI reporters instead:
+
+```shell
+fastererer --format=json      # single JSON document, includes a run summary
+fastererer --format=rdjsonl   # reviewdog JSON Lines, one record per offense
+fastererer --format=text      # the default
+```
+
+Machine formats write only their payload to stdout; diagnostics (parse errors, a missing path)
+go to stderr, so `fastererer --format=json > findings.json` captures clean JSON.
+
+`--format=json` produces one document with a `summary` of run counts and a flat `offenses` array
+(each offense carries `path`, `line`, `rule`, `message`, and `url`):
+
+```json
+{
+  "metadata": { "fastererer_version": "1.0.0" },
+  "summary": { "offense_count": 1, "inspected_file_count": 12, "unparsable_file_count": 0 },
+  "offenses": [
+    {
+      "path": "app/models/post.rb",
+      "line": 57,
+      "rule": "Performance/SelectFirstVsDetect",
+      "message": "Array#select.first is slower than Array#detect",
+      "url": "https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"
+    }
+  ]
+}
+```
+
+`--format=rdjsonl` follows the [reviewdog Diagnostic Format](https://github.com/reviewdog/reviewdog/tree/master/proto/rdf),
+one JSON object per line, ready to pipe straight into reviewdog (see [CI integration](#ci-integration)).
+
 ## Configuration
 
 Configuration lives in a `.fastererer.yml` file at the root of your project (or any ancestor
@@ -121,6 +157,18 @@ step:
 - name: Run fastererer
   run: bundle exec fastererer
 ```
+
+### Inline PR comments with reviewdog
+
+The `rdjsonl` format is consumed natively by [reviewdog](https://github.com/reviewdog/reviewdog),
+which can post findings as inline GitHub PR review comments:
+
+```shell
+bundle exec fastererer --format=rdjsonl | reviewdog -f=rdjsonl -reporter=github-pr-review
+```
+
+reviewdog reports every finding (`-reporter=github-pr-review` needs `pull-requests: write`). A
+turn-key GitHub Actions workflow is tracked separately.
 
 Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
 [no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output

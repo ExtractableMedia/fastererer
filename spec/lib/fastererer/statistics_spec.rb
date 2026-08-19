@@ -3,15 +3,16 @@
 require 'spec_helper'
 
 describe Fastererer::Statistics do
-  let(:traverser_mock) do
-    Struct.new(:scannable_files, :offenses_total_count, :parse_error_paths)
-          .new(scannable_files, offenses_count, parse_errors)
+  let(:report) do
+    Fastererer::Report.new(findings: [], files_inspected_count: inspected_count,
+                           offenses_detected_count: offenses_count,
+                           unparsable_files: parse_errors, missing_path: nil)
   end
 
-  let(:scannable_files) { [] }
+  let(:inspected_count) { 0 }
   let(:offenses_count) { 0 }
   let(:parse_errors) { [] }
-  let(:statistics) { described_class.new(traverser_mock) }
+  let(:statistics) { described_class.new(report) }
 
   describe 'inspected_files_output' do
     it 'includes the file count' do
