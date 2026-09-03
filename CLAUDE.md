@@ -3,6 +3,15 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this
 repository.
 
+## Public Repository
+
+This repository is public — its code, issues, pull requests and commit history are all visible to
+anyone. Don't name private repositories, internal systems, internal ticket IDs or internal hostnames
+in anything published here: PR and issue text, commit messages, code comments and tracked files
+alike. When a convention or technique comes from private work, describe it on its own terms — the
+provenance adds nothing a reader here can use. Note that editing a pull request description does not
+erase the original; GitHub keeps it in the description's edit history.
+
 ## Test Commands
 
 - Run the suite: `bin/rspec` — always the binstub, never `bundle exec rspec`
