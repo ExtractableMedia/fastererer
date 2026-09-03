@@ -19,6 +19,22 @@ describe Fastererer::Statistics do
     end
   end
 
+  describe 'offenses_found_output' do
+    context 'with no offenses' do
+      it 'reports the count in the singular-free form' do
+        expect(statistics.offenses_found_output).to include('0 offenses detected')
+      end
+    end
+
+    context 'with one offense' do
+      let(:offenses_count) { 1 }
+
+      it 'reports the count in the singular' do
+        expect(statistics.offenses_found_output).to include('1 offense detected')
+      end
+    end
+  end
+
   describe 'unparsable_files_output' do
     context 'with no unparsable files' do
       it 'returns nil' do

@@ -14,3 +14,7 @@ end
 def name
 	@name = rand(1..100)
 end
+
+
+def name
+end

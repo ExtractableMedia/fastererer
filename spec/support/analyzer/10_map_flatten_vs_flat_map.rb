@@ -13,3 +13,7 @@ ARRAY.map do |e|
 end.flatten(1)
 
 ARRAY.flat_map { |e| [e, e] }
+
+[[1, 2], [3]].flatten
+
+ARRAY.map { |e| [e, e] }.flatten(2)

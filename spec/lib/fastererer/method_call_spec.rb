@@ -455,6 +455,16 @@ describe Fastererer::MethodCall do
     end
   end
 
+  describe '#block_body' do
+    it 'returns the statements of a literal block' do
+      expect(build_method_call('arr.map { |x| x.foo }').block_body.size).to eq(1)
+    end
+
+    it 'is nil for a block-pass argument, which has no literal block' do
+      expect(build_method_call('arr.map(&:foo)').block_body).to be_nil
+    end
+  end
+
   describe '#block_argument_names' do
     it 'includes a required positional param' do
       expect(build_method_call('arr.map { |x| x.foo }').block_argument_names).to eq([:x])

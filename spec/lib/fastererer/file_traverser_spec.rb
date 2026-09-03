@@ -98,6 +98,36 @@ describe Fastererer::FileTraverser do
     end
   end
 
+  describe '#offenses_found?' do
+    let(:file_traverser) { described_class.new('.') }
+
+    context 'when a scanned file has an offense' do
+      before do
+        create_file('user.rb', '[].shuffle.first')
+        file_traverser.traverse
+      end
+
+      it 'is true' do
+        expect(file_traverser).to be_offenses_found
+      end
+
+      it 'counts every offense it found' do
+        expect(file_traverser.offenses_total_count).to eq(1)
+      end
+    end
+
+    context 'when no scanned file has an offense' do
+      before do
+        create_file('user.rb', '[].sample')
+        file_traverser.traverse
+      end
+
+      it 'is false' do
+        expect(file_traverser).not_to be_offenses_found
+      end
+    end
+  end
+
   describe 'scannable files' do
     let(:file_traverser) { described_class.new(argument) }
 
@@ -366,8 +396,8 @@ describe Fastererer::FileTraverser do
     context 'when the analyzer has offenses' do
       let(:explanation) { Fastererer::Explanation.new(:for_loop_vs_each) }
 
-      # Disable color so an expected string built outside the output capture agrees
-      # with the captured output regardless of whether the runner's stdout is a TTY.
+      # Disable color so an expected string built outside the output capture agrees with the
+      # captured output regardless of whether the runner's stdout is a TTY
       before { Fastererer::Painter.disable! }
       after { Fastererer::Painter.enable! }
 

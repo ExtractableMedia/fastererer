@@ -23,5 +23,6 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
-  config.before { allow($stdout).to receive(:puts) }
+  # Kernel#print goes straight through IO#write, so stubbing :print alone would not silence it
+  config.before { allow($stdout).to receive_messages(puts: nil, write: nil) }
 end
