@@ -5,7 +5,7 @@ require 'spec_helper'
 # This spec exercises the executable as a black box (shells out to
 # `exe/fastererer` and asserts on exit codes), so its subject is the
 # CLI binary, not a Ruby class.
-# rubocop:disable RSpec/DescribeClass
+# rubocop:disable-next RSpec/DescribeClass
 describe 'Fastererer CLI' do
   include FileHelper
 
@@ -63,4 +63,3 @@ describe 'Fastererer CLI' do
     File.expand_path('../../../exe/fastererer', __dir__)
   end
 end
-# rubocop:enable RSpec/DescribeClass

@@ -280,7 +280,7 @@ describe Fastererer::MethodCall do
     end
 
     context 'with arguments, without block, called with parentheses' do
-      # rubocop:disable RSpec/NestedGroups
+      # rubocop:disable-next RSpec/NestedGroups
       context 'with one argument' do
         let(:code) { '{}.fetch(:writing)' }
         let(:call_element) { first_statement }
@@ -291,11 +291,10 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments.first.element).to be_a(Prism::SymbolNode)
         end
       end
-      # rubocop:enable RSpec/NestedGroups
     end
 
     context 'with arguments, without block, called without parentheses' do
-      # rubocop:disable RSpec/NestedGroups
+      # rubocop:disable-next RSpec/NestedGroups
       context 'with two arguments' do
         let(:code) { '{}.fetch :writing, :listening' }
         let(:call_element) { first_statement }
@@ -307,7 +306,6 @@ describe Fastererer::MethodCall do
           expect(method_call.arguments[1].element).to be_a(Prism::SymbolNode)
         end
       end
-      # rubocop:enable RSpec/NestedGroups
     end
   end
 
