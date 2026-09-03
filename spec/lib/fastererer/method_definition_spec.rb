@@ -18,6 +18,14 @@ describe Fastererer::MethodDefinition do
       expect(method_definition.method_name).to eq(:hello)
       expect(method_definition.block?).to be(false)
     end
+
+    it 'has an empty body' do
+      expect(method_definition.body).to be_empty
+    end
+
+    it 'has no block argument name' do
+      expect(method_definition.block_argument_name).to be_nil
+    end
   end
 
   context 'with no arguments and omitted parentheses' do

@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# A run narrowed to some specs cannot reach the floors below, so they only apply to the whole suite
+narrowing_flags = %w[-e --example -t --tag]
+whole_suite = ARGV.none? { |arg| arg.start_with?('spec/') || narrowing_flags.include?(arg) }
+
 SimpleCov.configure do
   skip '/spec/'
   skip '/vendor/'
@@ -12,15 +16,14 @@ SimpleCov.configure do
 
   group 'Scanners', 'lib/fastererer/scanners'
 
-  coverage :line do
-    minimum 96
+  # Only the whole suite can reach these floors, so a narrowed run reports without failing
+  if whole_suite
+    coverage :line do
+      minimum 100
+    end
 
-    # The scanners are the rule logic and are fully line covered; hold new ones to that
-    minimum_per_group 100, only: 'Scanners'
-  end
-
-  # Branch coverage runs well below line coverage, hence the lower floor
-  coverage :branch do
-    minimum 85
+    coverage :branch do
+      minimum 100
+    end
   end
 end

@@ -137,6 +137,13 @@ describe Fastererer::RuleCatalog do
       expect { described_class.all }.to raise_error(/non-printable url/)
     end
 
+    it 'raises when a rule description has non-printable characters' do
+      allow(YAML).to receive(:safe_load_file)
+        .and_return(locale_with(url: 'https://ok', description: "bad\e[0m"))
+
+      expect { described_class.all }.to raise_error(/non-printable description/)
+    end
+
     it 'raises when a rule entry is not a hash' do
       malformed = { 'en' => { 'fastererer' => { 'rules' => { 'only_rule' => 'oops' } } } }
       allow(YAML).to receive(:safe_load_file).and_return(malformed)

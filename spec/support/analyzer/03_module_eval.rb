@@ -13,3 +13,7 @@ Hihi.hello
 Hihi.module_eval %{
  puts @foo
 }
+
+Hihi.module_eval do
+  puts @foo
+end

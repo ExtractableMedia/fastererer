@@ -14,3 +14,5 @@ class Hello
 end
 
 petar.gsub('pet', 'fat')
+
+petar.gsub('a')

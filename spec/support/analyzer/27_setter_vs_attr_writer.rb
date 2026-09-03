@@ -15,3 +15,20 @@ end
 def name=(value, &block)
 	@name = value
 end
+
+def []=(key, value)
+	@data[key] = value
+end
+
+def name=(value)
+	@name = value
+	@dirty = true
+end
+
+def name=(*values)
+	@name = values
+end
+
+def name=(value)
+	puts value
+end
