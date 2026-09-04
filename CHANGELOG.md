@@ -9,6 +9,15 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 
 ## [Unreleased]
 
+### Added
+
+- [#56]: A `github` value for `-f`/`--format`, emitting [GitHub Actions workflow commands] —
+  one `::warning file=<path>,line=<line>::<rule key>: <message>` per offense. The Actions runner
+  renders these as inline annotations on the pull request with no external tooling, making it a
+  zero-dependency alternative to the reviewdog integration. GitHub caps annotations at 10 warnings
+  per step and 50 per job, so the README recommends reviewdog for codebases with more findings
+  than that.
+
 ## [1.1.0] - 2026-09-04
 
 ### Added
@@ -169,6 +178,7 @@ First stable release of `fastererer` after the fork.
 - Update Ruby Parser to ~> 3.9
 - Support Ruby 2.3
 
+[GitHub Actions workflow commands]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
 [Keep a Changelog]: https://keepachangelog.com
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 [Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v1.1.0...HEAD
@@ -182,5 +192,6 @@ First stable release of `fastererer` after the fork.
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
 [#40]: https://github.com/ExtractableMedia/fastererer/issues/40
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42
+[#56]: https://github.com/ExtractableMedia/fastererer/issues/56
 [#77]: https://github.com/ExtractableMedia/fastererer/issues/77
 [#84]: https://github.com/ExtractableMedia/fastererer/pull/84

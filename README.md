@@ -84,6 +84,7 @@ machine-readable output for editors, log aggregators, or CI reporters instead:
 ```shell
 fastererer --format=json      # single JSON document, includes a run summary
 fastererer --format=rdjsonl   # reviewdog JSON Lines, one record per offense
+fastererer --format=github    # GitHub Actions workflow commands, one per offense
 fastererer --format=text      # the default
 ```
 
@@ -122,6 +123,18 @@ and the key is the name a reader can act on — the one to add under `speedups:`
 ```json
 {"message":"Array#select.first is slower than Array#detect","location":{"path":"app/models/post.rb","range":{"start":{"line":57}}},"severity":"WARNING","code":{"value":"select_first_vs_detect","url":"https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"}}
 ```
+
+`--format=github` emits [GitHub Actions workflow commands][workflow-commands], one `::warning` line
+per offense, which the Actions runner turns into inline annotations on the pull request without any
+other tooling (see [Inline annotations on GitHub Actions](#inline-annotations-on-github-actions)).
+The message leads with the rule key, for the same reason `rdjsonl` puts it in `code.value`:
+
+```text
+::warning file=app/models/post.rb,line=57::select_first_vs_detect: Array#select.first is slower than Array#detect
+```
+
+Paths and messages are percent-encoded where the workflow command syntax requires it, so a file
+name containing a comma or colon still lands on the right line.
 
 ## Configuration
 
@@ -202,6 +215,25 @@ Run fastererer from the repository root and let the path default to `.`. reviewd
 against the pull request by repository-relative path, so passing an absolute directory emits
 absolute paths that will not match — and puts the runner's directory layout in a public comment.
 
+### Inline annotations on GitHub Actions
+
+The `github` format needs no external tooling at all — the Actions runner reads the workflow
+commands straight off stdout and renders them as inline annotations:
+
+```yaml
+- name: Run fastererer
+  run: bundle exec fastererer --format=github
+```
+
+Every finding is reported; nothing is filtered to the pull request diff. As with reviewdog, run
+fastererer from the repository root and let the path default to `.`, since annotations are anchored
+by repository-relative path.
+
+GitHub caps annotations at [10 warnings per step and 50 per job][annotation-limits], and silently
+drops the rest with no indication in the UI. Below that ceiling this is the simplest possible
+integration; above it, prefer the reviewdog path, which has no such cap and posts threaded,
+resolvable review comments — at the cost of installing reviewdog and granting it a token.
+
 Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
 [no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output
 (`fastererer | grep`), and editor integrations get plain text without configuration.
@@ -254,5 +286,7 @@ for the idiom catalog that drives the speed checks.
 [issues]: https://github.com/ExtractableMedia/fastererer/issues
 [prism]: https://github.com/ruby/prism
 [rdf]: https://github.com/reviewdog/reviewdog/tree/master/proto/rdf
+[workflow-commands]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
+[annotation-limits]: https://github.com/orgs/community/discussions/26680
 [roadmap-project]: https://github.com/orgs/ExtractableMedia/projects/1
 [sferik-talk]: https://speakerdeck.com/sferik/writing-fast-ruby
