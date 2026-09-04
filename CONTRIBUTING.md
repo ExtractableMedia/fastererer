@@ -53,6 +53,18 @@ bundle exec exe/fastererer path/to/file.rb
 - New Ruby files should start with `# frozen_string_literal: true`.
 - Tests use RSpec — see existing specs in `spec/` for examples and conventions.
 
+## Adding a Speedup
+
+A new speedup ships **held back**, so that upgrading fastererer cannot turn someone's green build
+red on its own:
+
+1. Add it to `config/default.yml` with the value `pending`, not `true`.
+2. Flip it to `true` in the next minor release. Under SemVer for 0.x the minor is the breaking
+   slot, so that is where a change to what counts as an offense belongs.
+
+Leaving speedups on `pending` indefinitely is what turns the held-back notice into noise everyone
+learns to ignore, so the flip is not optional.
+
 ## Code of Conduct
 
 By participating in this project, you agree to abide by its [Code of Conduct][code-of-conduct].

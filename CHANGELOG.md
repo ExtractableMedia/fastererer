@@ -9,6 +9,42 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 
 ## [Unreleased]
 
+### Added
+
+- [#35]: Fastererer now ships its own defaults at `config/default.yml`. A project with no
+  `.fastererer.yml` gets every speedup enabled and skips `tmp/**/*.rb`, `vendor/**/*.rb` and
+  `node_modules/**/*.rb`. `.fastererer.yml` now holds only your overrides — you no longer restate
+  the whole list of speedups in order to change one of them.
+- [#35]: A `new_speedups` setting, one of `enable`, `warn` or `disable`, governing speedups added
+  in future releases. A newly added speedup is held back by default: it is named once on stderr
+  and reports no offenses, so upgrading fastererer cannot turn a green build red on its own.
+  `pending` is accepted as a synonym for `warn`.
+
+### Changed
+
+- [#35]: `.fastererer.yml` now layers over the shipped defaults instead of standing alone. Keys you
+  do not set keep their default value, so an existing config keeps working unchanged; a speedup set
+  to `false` still disables it, and a key present with no value now inherits the default rather
+  than being treated as enabled.
+- [#35]: `exclude_paths` in a project config is *added to* the shipped defaults rather than
+  replacing them, so adding one exclude does not silently start scanning `vendor/`. This differs
+  from RuboCop's `AllCops/Exclude`, which replaces the shipped list.
+- [#35]: A `.fastererer.yml` that cannot be read now reports one line on stderr and exits `2`
+  before scanning anything. It previously printed a full scan, then a Ruby backtrace, and exited
+  `1` — the status that means offenses were found.
+
+### Removed
+
+- [#35]: `Config#nil_file`. `Config#default_config` returns the shipped defaults in its place; the
+  empty `speedups`/`exclude_paths` fallback it used to return no longer exists. `FileTraverser`
+  loses `#config_file` along with two unused constant aliases.
+
+### Fixed
+
+- [#35]: A file named directly on the command line is now scanned even when `exclude_paths`
+  matches it. `fastererer vendor/foo.rb` previously reported `0 files inspected, 0 offenses
+  detected` and exited `0`, so an excluded path was indistinguishable from a clean scan.
+
 ## [1.1.0] - 2026-09-04
 
 ### Added
@@ -180,6 +216,7 @@ First stable release of `fastererer` after the fork.
 [#9]: https://github.com/ExtractableMedia/fastererer/pull/9
 [#15]: https://github.com/ExtractableMedia/fastererer/pull/15
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
+[#35]: https://github.com/ExtractableMedia/fastererer/issues/35
 [#40]: https://github.com/ExtractableMedia/fastererer/issues/40
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42
 [#77]: https://github.com/ExtractableMedia/fastererer/issues/77
