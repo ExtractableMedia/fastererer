@@ -2,8 +2,8 @@
 
 # Builds the value objects a formatter renders, without running a scan
 module FormatterHelpers
-  def finding(path:, line:, rule_name:, description:, url: 'https://e.test',
-              rule_key: 'slow_thing')
+  def finding(path:, line:, description:, rule_key: 'slow_thing',
+              rule_name: 'Performance/SlowThing', url: 'https://e.test')
     Fastererer::Finding.new(path:, line:, rule_key:, rule_name:, description:, url:)
   end
 

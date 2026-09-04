@@ -115,7 +115,13 @@ consumer can offer to silence a rule without guessing at the name:
 ```
 
 `--format=rdjsonl` follows the [reviewdog Diagnostic Format][rdf], one JSON object per line, ready
-to pipe straight into reviewdog (see [CI integration](#ci-integration)).
+to pipe straight into reviewdog (see [CI integration](#ci-integration)). `code.value` carries the
+rule key rather than the display name, because reviewdog renders it into the pull request comment
+and the key is the name a reader can act on — the one to add under `speedups:` in `.fastererer.yml`:
+
+```json
+{"message":"Array#select.first is slower than Array#detect","location":{"path":"app/models/post.rb","range":{"start":{"line":57}}},"severity":"WARNING","code":{"value":"select_first_vs_detect","url":"https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"}}
+```
 
 ## Configuration
 

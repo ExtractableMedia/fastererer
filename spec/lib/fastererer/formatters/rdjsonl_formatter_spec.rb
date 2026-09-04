@@ -15,9 +15,9 @@ describe Fastererer::Formatters::RdjsonlFormatter do
   describe '#render' do
     context 'with offenses' do
       let(:findings) do
-        [finding(path: 'a.rb', line: 2, rule_name: 'Performance/Aaa', description: 'Slow A'),
-         finding(path: 'a.rb', line: 7, rule_name: 'Performance/Bbb', description: 'Slow B'),
-         finding(path: 'b.rb', line: 9, rule_name: 'Performance/Aaa', description: 'Slow C')]
+        [finding(path: 'a.rb', line: 2, rule_key: 'aaa', description: 'Slow A'),
+         finding(path: 'a.rb', line: 7, rule_key: 'bbb', description: 'Slow B'),
+         finding(path: 'b.rb', line: 9, rule_key: 'aaa', description: 'Slow C')]
       end
 
       let(:expected_locations) do
@@ -31,7 +31,7 @@ describe Fastererer::Formatters::RdjsonlFormatter do
           'message' => 'Slow A',
           'location' => { 'path' => 'a.rb', 'range' => { 'start' => { 'line' => 2 } } },
           'severity' => 'WARNING',
-          'code' => { 'value' => 'Performance/Aaa', 'url' => 'https://e.test' }
+          'code' => { 'value' => 'aaa', 'url' => 'https://e.test' }
         }
       end
 

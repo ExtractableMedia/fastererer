@@ -8,6 +8,8 @@ module Fastererer
   # Loads, validates, memoizes and looks up the rule catalog from the i18n locale.
   module RuleCatalog
     LOCALE_PATH = File.expand_path('../../config/locales/en.yml', __dir__)
+    KEY_SHAPE = /\A[a-z0-9_]+\z/
+    private_constant :KEY_SHAPE
 
     class << self
       def all
@@ -48,6 +50,9 @@ module Fastererer
 
       def validate_row!(key, row)
         raise "Fastererer rule #{key} is malformed: #{row.inspect}" unless row.is_a?(Hash)
+        unless key.is_a?(String) && key.match?(KEY_SHAPE)
+          raise "Fastererer rule #{key.inspect} is not a snake_case key"
+        end
 
         validate_url!(key, row['url'])
         validate_description!(key, row['description'])

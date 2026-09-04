@@ -144,6 +144,19 @@ describe Fastererer::RuleCatalog do
       expect { described_class.all }.to raise_error(/non-printable description/)
     end
 
+    it 'raises when a rule key is not snake_case' do
+      allow(YAML).to receive(:safe_load_file)
+        .and_return(locale_with(url: 'https://ok', key: 'Performance/OnlyRule'))
+
+      expect { described_class.all }.to raise_error(/is not a snake_case key/)
+    end
+
+    it 'raises when a rule key is not a String' do
+      allow(YAML).to receive(:safe_load_file).and_return(locale_with(url: 'https://ok', key: 42))
+
+      expect { described_class.all }.to raise_error(/is not a snake_case key/)
+    end
+
     it 'raises when a rule entry is not a hash' do
       malformed = { 'en' => { 'fastererer' => { 'rules' => { 'only_rule' => 'oops' } } } }
       allow(YAML).to receive(:safe_load_file).and_return(malformed)
@@ -153,9 +166,9 @@ describe Fastererer::RuleCatalog do
 
     private
 
-    def locale_with(url:, description: 'A description')
+    def locale_with(url:, description: 'A description', key: 'only_rule')
       row = { 'description' => description, 'url' => url }
-      { 'en' => { 'fastererer' => { 'rules' => { 'only_rule' => row } } } }
+      { 'en' => { 'fastererer' => { 'rules' => { key => row } } } }
     end
   end
 end

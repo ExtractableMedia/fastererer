@@ -96,9 +96,12 @@ describe 'Fastererer CLI' do
       expect(status.exitstatus).to eq(1)
     end
 
-    it 'emits a reviewdog record on stdout with -f rdjsonl' do
+    it 'emits a reviewdog record naming the configuration key with -f rdjsonl' do
       stdout, = Open3.capture3(fasterer_bin, '-f', 'rdjsonl')
-      expect(stdout.lines.first.to_s).to include('"severity":"WARNING"')
+      diagnostic = JSON.parse(stdout.lines.first.to_s)
+
+      expect(diagnostic).to include('severity' => 'WARNING',
+                                    'code' => include('value' => 'shuffle_first_vs_sample'))
     end
 
     it 'reports an unknown format on stderr and exits non-zero', :aggregate_failures do
