@@ -56,18 +56,18 @@ module Fastererer
       @default_config ||= DefaultConfig.load
     end
 
+    def project_config
+      return {} if file_location.nil?
+
+      @project_config ||= ConfigLoader.load(file_location)
+    end
+
     private
 
     def enabled?(value)
       return new_speedups_mode == :enable if value == PENDING
 
       value != false
-    end
-
-    def project_config
-      return {} if file_location.nil?
-
-      ConfigLoader.load(file_location)
     end
 
     def merge_value(key, default_value, project_value)

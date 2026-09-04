@@ -51,6 +51,13 @@ describe 'Fastererer CLI' do
     end
   end
 
+  describe 'init subcommand' do
+    it 'writes the starter config through the real argument vector' do
+      `#{fasterer_bin} init`
+      expect(File).to exist(Fastererer::Config::FILE_NAME)
+    end
+  end
+
   describe 'stream routing' do
     before { create_file('bad.rb', '[]*/sa*()') }
 
