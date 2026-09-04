@@ -28,10 +28,12 @@ reviewers evaluate the **plan document** rather than a change set.
   plan assumes).
 - Findings use the same severity indicators and numbering scheme (F1, F2, ...) as code review
   findings.
-- The output file is still saved to `local-review.md` with a heading that indicates this is a **plan
-  review** (e.g., "Plan Review" instead of "Local Review"). The same Merging with Existing Findings
-  rules apply — if `local-review.md` already exists from a prior code or plan review, the
-  documentation-expert merges findings rather than overwriting the file.
+- The output file is `plan-review.md` in the repository root, titled `# Plan Review`. A plan review
+  never writes into `local-review.md`: the two have different subjects, so one shared file would
+  carry a single heading for two kinds of finding, one numbering sequence spanning a plan and a
+  change set, and a checklist interleaving plan revisions with code fixes. The Merging with Existing
+  Findings rules apply within `plan-review.md` — if a prior plan review left one, the
+  documentation-expert merges findings rather than overwriting it.
 - Skip the Interactive Finding Selection step — plan reviews are informational and findings are
   addressed by revising the plan, not by fixing code. The implementation groups in the pre-merge
   checklist still apply: they order the plan revisions rather than code fixes. Still put any ⚖️
@@ -47,21 +49,26 @@ code-best-practices-reviewer, ruby-expert, security-reviewer, and test-suite-arc
 
 ### `--reconcile`
 
-Assess the current state of findings in `local-review.md` and mark completed items. This does
-**not** re-run the review — it evaluates whether existing actionable findings have been addressed in
-the code.
+Assess the current state of findings in a review file and mark completed items. This does
+**not** re-run the review — it evaluates whether existing actionable findings have been addressed.
 
 **Behavior:**
 
-1. Read the existing `local-review.md`. If it doesn't exist, inform the user and abort.
+1. Determine which file to reconcile. A path in `$ARGUMENTS` names it; with none, the file is
+   `local-review.md`. Pass `plan-review.md` to reconcile a plan review — `--plan` selects the review
+   *mode* and does not combine with `--reconcile`, so the file is how a plan review is named here.
+   If the file doesn't exist, inform the user and abort.
 1. For each **open actionable finding other than a ⚖️ Decision** (marked ❓ Open, or carrying no
    status marker at all in a file written before ❓ was introduced):
-   - Read the file and line(s) referenced in the finding.
-   - Determine whether the condition the finding describes still holds in the current code. The test
-     is the finding's own claim, not the shape of the suggested fix — re-derive it against what the
-     code does now. A rewrite that moved or renamed the code is not by itself evidence of a fix, and
-     a line reference that has drifted means the finding must be re-located rather than treated as
-     resolved. When in doubt, leave it ❓ Open.
+   - Read the file and line(s) referenced in the finding. In `plan-review.md` those references point
+     into the plan document rather than into the code; if the plan file no longer exists, say so and
+     leave every finding untouched — a deleted plan is no evidence that its findings were addressed.
+   - Determine whether the condition the finding describes still holds — in the current code for a
+     code review, in the current plan text for a plan review. The test is the finding's own claim,
+     not the shape of the suggested fix, so re-derive it against what the file says now. A rewrite
+     that moved or renamed the subject is not by itself evidence of a fix, and a line reference that
+     has drifted means the finding must be re-located rather than treated as resolved. When in
+     doubt, leave it ❓ Open.
    - If resolved: mark the finding as ✅ Fixed, following the status tracking conventions in the
      Output Requirements section below. Include a brief explanation of how it was addressed (e.g.,
      "Fixed — validation added in commit `abc123`" or "Fixed — method was refactored").
@@ -85,7 +92,7 @@ the code.
    **Orchestration:** Opus 5 (`claude-opus-5[1m]`)
    ```
 
-1. Save the updated `local-review.md`.
+1. Save the updated file.
 1. Output a summary of what changed (e.g., "Marked F1, F3, F5 as fixed. 2 findings remain open: F2,
    F4.").
 
@@ -851,9 +858,11 @@ Save the complete review findings to `local-review.md` in the repository root. T
 
 - **Create** the file if it doesn't exist
 - **Merge** with existing findings if the file already exists (see below)
-- Include all sections, **in this order**: review history, overview (omitted below five actionable
-  findings — see Overview), findings by category, consolidated summary, then the pre-merge checklist
-  organized into implementation groups
+- Include all sections, **in this order**: the `# Local Review` title, review history, overview
+  (omitted below five actionable findings — see Overview), findings by category, consolidated
+  summary, then the pre-merge checklist organized into implementation groups
+- A plan review writes the same sections to `plan-review.md` under a `# Plan Review` title (see the
+  `--plan` parameter). Each file keeps its own title and its own finding numbers
 - **Leave the file untracked.** `local-review.md` is review scaffolding, not part of the change it
   describes — do not `git add` it (see Review Scaffolding in `CLAUDE.md`)
 
