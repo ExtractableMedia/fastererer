@@ -5,6 +5,7 @@ require 'bundler/setup'
 require 'simplecov'
 SimpleCov.start
 
+require 'stringio'
 require 'fastererer'
 require 'fastererer/cli'
 

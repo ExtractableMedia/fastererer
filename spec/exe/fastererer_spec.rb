@@ -35,6 +35,18 @@ describe 'Fastererer CLI' do
     end
   end
 
+  describe 'stream routing' do
+    before { create_file('bad.rb', '[]*/sa*()') }
+
+    it 'keeps parse-error diagnostics off stdout' do
+      expect(`#{fasterer_bin} 2>/dev/null`).not_to include('Unprocessable files were')
+    end
+
+    it 'keeps the statistics line on stdout' do
+      expect(`#{fasterer_bin} 2>/dev/null`).to include('1 unparsable file found')
+    end
+  end
+
   describe 'color output' do
     # Backtick subshells are non-TTY, so these only assert the negative; positive in painter_spec
     before { create_file('user.rb', '[].shuffle.first') }

@@ -10,6 +10,11 @@ module Fastererer
       @instances[offense_name.to_sym] ||= new(offense_name)
     end
 
+    # TextFormatter renders through this too, so its output cannot drift from Explanation#to_s
+    def self.format_line(source)
+      "#{source.rule_name}: #{source.description.delete_suffix('.')}. (#{source.url})"
+    end
+
     attr_reader :offense_name
 
     def initialize(offense_name)
@@ -30,7 +35,7 @@ module Fastererer
     end
 
     def to_s
-      "#{rule_name}: #{description.delete_suffix('.')}. (#{url})"
+      self.class.format_line(self)
     end
 
     private
