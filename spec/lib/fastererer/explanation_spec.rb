@@ -21,6 +21,19 @@ describe Fastererer::Explanation do
     end
   end
 
+  describe '.format_line' do
+    let(:source) do
+      instance_double(Fastererer::Finding, rule_name: 'Performance/Foo',
+                                           description: 'Slow thing.', url: 'https://e.test')
+    end
+
+    it 'strips a trailing period from the description before re-adding one' do
+      line = described_class.format_line(source)
+
+      expect(line).to eq('Performance/Foo: Slow thing. (https://e.test)')
+    end
+  end
+
   describe '#offense_name' do
     it 'is stored as a symbol when constructed with a string' do
       expect(described_class.new('for_loop_vs_each').offense_name).to eq(:for_loop_vs_each)

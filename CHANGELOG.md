@@ -8,6 +8,26 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 
 ## [Unreleased]
 
+### Changed
+
+- [#77]: Parse errors and the "No such file or directory" message now go to STDERR instead of
+  STDOUT. STDOUT carries only offense lines and the statistics line, so it can be piped, grepped or
+  redirected on its own.
+- [#77]: `FileTraverser#parse_error_paths` now returns `ErrorData` objects rather than preformatted
+  strings, so the path, error class and message stay separately addressable. Call `to_s` on an
+  entry for the previous string form.
+
+### Removed
+
+- [#77]: The `FileTraverser#offenses_total_count` accessor. The command-line interface never used
+  it; scripts that read it directly will need updating.
+
+### Fixed
+
+- [#77]: The "N offenses detected" statistics line no longer counts offenses suppressed by
+  `speedups: <rule>: false` in `.fastererer.yml`. The total previously included suppressed
+  offenses, so it could exceed the number of offense lines printed; the two now agree.
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of `fastererer` after the fork.
@@ -145,3 +165,4 @@ First stable release of `fastererer` after the fork.
 [#15]: https://github.com/ExtractableMedia/fastererer/pull/15
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42
+[#77]: https://github.com/ExtractableMedia/fastererer/issues/77

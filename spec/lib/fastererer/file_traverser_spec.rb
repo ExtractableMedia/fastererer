@@ -7,6 +7,79 @@ describe Fastererer::FileTraverser do
 
   include_context 'isolated environment'
 
+  let(:quiet_formatter) do
+    Fastererer::Formatters::TextFormatter.new(out: StringIO.new, err: StringIO.new)
+  end
+
+  describe '#traverse' do
+    let(:out) { StringIO.new }
+    let(:formatter) { Fastererer::Formatters::TextFormatter.new(out: out, err: StringIO.new) }
+    let(:file_traverser) { described_class.new('.', formatter: formatter) }
+
+    before { Fastererer::Painter.disable! }
+
+    after { Fastererer::Painter.enable! }
+
+    context 'with an offense in a scanned file' do
+      before do
+        create_file('user.rb', ['x = 1', 'y = [1, 2].shuffle.first'])
+        file_traverser.traverse
+      end
+
+      it 'renders the offending line with its catalog explanation' do
+        explanation = Fastererer::Explanation.new(:shuffle_first_vs_sample)
+
+        expect(out.string).to include("user.rb:2: W: #{explanation}")
+      end
+
+      it 'reports the file and offense counts' do
+        expect(out.string).to include('1 file inspected, 1 offense detected')
+      end
+    end
+
+    context 'with the offense rule disabled in config' do
+      before do
+        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
+                    ['speedups:', '  shuffle_first_vs_sample: false'])
+        create_file('user.rb', '[1, 2].shuffle.first')
+        file_traverser.traverse
+      end
+
+      it 'leaves the offense out of the rendered output' do
+        expect(out.string).not_to include('Performance/ShuffleFirstVsSample')
+      end
+
+      it 'leaves the offense out of the statistics count' do
+        expect(out.string).to include('1 file inspected, 0 offenses detected')
+      end
+
+      it 'does not report offenses found' do
+        expect(file_traverser).not_to be_offenses_found
+      end
+    end
+
+    context 'with one of two offense rules disabled in config' do
+      before do
+        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
+                    ['speedups:', '  keys_each_vs_each_key: false'])
+        create_file('user.rb', ['[1, 2].shuffle.first', '{}.keys.each { |key| key }'])
+        file_traverser.traverse
+      end
+
+      it 'renders the offense from the enabled rule' do
+        expect(out.string).to include('user.rb:1: W: Performance/ShuffleFirstVsSample')
+      end
+
+      it 'omits the offense from the disabled rule' do
+        expect(out.string).not_to include('Performance/KeysEachVsEachKey')
+      end
+
+      it 'counts only the offenses it reports' do
+        expect(out.string).to include('1 file inspected, 1 offense detected')
+      end
+    end
+  end
+
   describe 'config_file' do
     context 'with no config file' do
       let(:file_traverser) { described_class.new('.') }
@@ -99,7 +172,7 @@ describe Fastererer::FileTraverser do
   end
 
   describe '#offenses_found?' do
-    let(:file_traverser) { described_class.new('.') }
+    let(:file_traverser) { described_class.new('.', formatter: quiet_formatter) }
 
     context 'when a scanned file has an offense' do
       before do
@@ -109,10 +182,6 @@ describe Fastererer::FileTraverser do
 
       it 'is true' do
         expect(file_traverser).to be_offenses_found
-      end
-
-      it 'counts every offense it found' do
-        expect(file_traverser.offenses_total_count).to eq(1)
       end
     end
 
@@ -324,13 +393,13 @@ describe Fastererer::FileTraverser do
   end
 
   describe 'non-existent path' do
-    let(:file_traverser) { described_class.new('no_such_path') }
+    let(:err) { StringIO.new }
+    let(:formatter) { Fastererer::Formatters::TextFormatter.new(out: StringIO.new, err: err) }
+    let(:file_traverser) { described_class.new('no_such_path', formatter: formatter) }
 
-    it 'outputs an error message' do
-      allow(file_traverser).to receive(:puts)
+    it 'routes a missing-path message to stderr' do
       file_traverser.traverse
-      expect(file_traverser).to have_received(:puts)
-        .with(a_string_matching(/No such file or directory/))
+      expect(err.string).to include('No such file or directory')
     end
   end
 
@@ -340,17 +409,18 @@ describe Fastererer::FileTraverser do
       file_traverser.traverse
     end
 
-    let(:file_traverser) { described_class.new('.') }
+    let(:file_traverser) { described_class.new('.', formatter: quiet_formatter) }
 
     it 'has errors', :aggregate_failures do
+      error = file_traverser.parse_error_paths.first
+
       expect(file_traverser.parse_error_paths.count).to eq(1)
-      expect(file_traverser.parse_error_paths.first)
-        .to start_with('user.rb - Fastererer::ParseError - ')
+      expect(error).to have_attributes(file_path: 'user.rb', error_class: Fastererer::ParseError)
     end
   end
 
   describe 'unexpected scan errors' do
-    let(:file_traverser) { described_class.new('.') }
+    let(:file_traverser) { described_class.new('.', formatter: quiet_formatter) }
     let(:analyzer) { instance_double(Fastererer::Analyzer) }
 
     before do
@@ -368,62 +438,27 @@ describe Fastererer::FileTraverser do
       allow(analyzer).to receive(:scan).and_raise(Errno::EACCES)
 
       expect { file_traverser.traverse }.not_to raise_error
-      expect(file_traverser.parse_error_paths.first).to include('Errno::EACCES')
+
+      error = file_traverser.parse_error_paths.first
+      expect(error).to have_attributes(error_class: Errno::EACCES)
     end
 
     it 'reports a stack overflow as unprocessable instead of aborting', :aggregate_failures do
       allow(analyzer).to receive(:scan).and_raise(SystemStackError)
 
       expect { file_traverser.traverse }.not_to raise_error
-      expect(file_traverser.parse_error_paths.first).to include('SystemStackError')
+
+      error = file_traverser.parse_error_paths.first
+      expect(error).to have_attributes(error_class: SystemStackError)
     end
 
     it 'reports an encoding error as unprocessable instead of aborting', :aggregate_failures do
       allow(analyzer).to receive(:scan).and_raise(Encoding::CompatibilityError)
 
       expect { file_traverser.traverse }.not_to raise_error
-      expect(file_traverser.parse_error_paths.first).to include('Encoding::CompatibilityError')
-    end
-  end
 
-  describe 'output' do
-    let(:test_file_path) { RSpec.root.join('support', 'output', 'sample_code.rb') }
-    let(:analyzer) { Fastererer::Analyzer.new(test_file_path) }
-    let(:file_traverser) { described_class.new('.') }
-
-    before { analyzer.scan }
-
-    context 'when the analyzer has offenses' do
-      let(:explanation) { Fastererer::Explanation.new(:for_loop_vs_each) }
-
-      # Disable color so an expected string built outside the output capture agrees with the
-      # captured output regardless of whether the runner's stdout is a TTY
-      before { Fastererer::Painter.disable! }
-      after { Fastererer::Painter.enable! }
-
-      it 'prints the offense location and its explanation' do
-        expect { file_traverser.send(:output, analyzer) }
-          .to output(include("#{test_file_path}:1", explanation.to_s)).to_stdout
-      end
-
-      it 'renders the rubocop-style path, severity, and explanation line' do
-        path = Fastererer::Painter.paint("#{test_file_path}:1", :red)
-        severity = Fastererer::Painter.paint('W', :magenta)
-        expected = "#{path}: #{severity}: #{explanation}"
-
-        expect { file_traverser.send(:output, analyzer) }.to output(include(expected)).to_stdout
-      end
-    end
-
-    context 'with multiple rule types in one file' do
-      let(:test_file_path) { RSpec.root.join('support', 'output', 'multiple_offenses.rb') }
-
-      it 'prints one line per rule with both rule names present' do
-        expect { file_traverser.send(:output, analyzer) }.to output(
-          a_string_including('Performance/ForLoopVsEach:')
-            .and(including('Performance/ShuffleFirstVsSample:'))
-        ).to_stdout
-      end
+      error = file_traverser.parse_error_paths.first
+      expect(error).to have_attributes(error_class: Encoding::CompatibilityError)
     end
   end
 end
