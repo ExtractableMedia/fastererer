@@ -14,9 +14,8 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 - [#56]: A `github` value for `-f`/`--format`, emitting [GitHub Actions workflow commands] —
   one `::warning file=<path>,line=<line>::<rule key>: <message>` per offense. The Actions runner
   renders these as inline annotations on the pull request with no external tooling, making it a
-  zero-dependency alternative to the reviewdog integration. GitHub caps annotations at 10 warnings
-  per step and 50 per job, so the README recommends reviewdog for codebases with more findings
-  than that.
+  zero-dependency alternative to the reviewdog integration. GitHub caps Actions annotations at 10
+  warnings per step, so the README recommends reviewdog for codebases with more findings than that.
 
 ## [1.1.0] - 2026-09-04
 

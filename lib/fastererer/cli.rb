@@ -10,7 +10,9 @@ module Fastererer
   class CLI
     OFFENSES_FOUND_STATUS = 1
     USAGE_ERROR_STATUS = 2
-    FORMAT_HELP = 'Output format: text (default), json, rdjsonl, github'
+    FORMAT_HELP = "Output format: #{Formatters::FORMATS.keys.join(', ')} " \
+                  '(text is the default)'.freeze
+    private_constant :FORMAT_HELP
 
     def self.execute(out: $stdout, err: $stderr)
       options = parse_options(ARGV.dup)

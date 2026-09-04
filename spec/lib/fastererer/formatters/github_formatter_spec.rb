@@ -9,7 +9,7 @@ describe Fastererer::Formatters::GithubFormatter do
 
   let(:out) { StringIO.new }
   let(:err) { StringIO.new }
-  let(:lines) { out.string.lines(chomp: true) }
+  let(:annotations) { out.string.lines(chomp: true) }
 
   describe '#render' do
     context 'with offenses' do
@@ -28,7 +28,7 @@ describe Fastererer::Formatters::GithubFormatter do
       before { formatter.render(report(findings: findings, inspected: 2)) }
 
       it 'emits one workflow command per offense, including repeats within one file' do
-        expect(lines).to eq(expected_annotations)
+        expect(annotations).to eq(expected_annotations)
       end
 
       it 'excludes the statistics line' do
@@ -42,7 +42,17 @@ describe Fastererer::Formatters::GithubFormatter do
       before { formatter.render(report(findings: findings, inspected: 1)) }
 
       it 'percent-encodes them so the property value survives' do
-        expect(lines.first).to start_with('::warning file=a%2Cb%3Ac%25d.rb,line=3::')
+        expect(annotations.first).to start_with('::warning file=a%2Cb%3Ac%25d.rb,line=3::')
+      end
+    end
+
+    context 'with a control character in the path' do
+      let(:findings) { [finding(path: "ev\nil.rb", line: 3, description: 'Slow')] }
+
+      before { formatter.render(report(findings: findings, inspected: 1)) }
+
+      it 'escapes it so a crafted file name cannot open a second command' do
+        expect(annotations).to eq(['::warning file=ev\\x0Ail.rb,line=3::slow_thing: Slow'])
       end
     end
 
@@ -52,7 +62,17 @@ describe Fastererer::Formatters::GithubFormatter do
       before { formatter.render(report(findings: findings, inspected: 1)) }
 
       it 'percent-encodes it so the runner does not decode it' do
-        expect(lines.first).to end_with('::slow_thing: Use 100%25 less')
+        expect(annotations.first).to end_with('::slow_thing: Use 100%25 less')
+      end
+    end
+
+    context 'with a comma and colon in the description' do
+      let(:findings) { [finding(path: 'a.rb', line: 1, description: 'Rescue it, use: x')] }
+
+      before { formatter.render(report(findings: findings, inspected: 1)) }
+
+      it 'leaves them raw, since only property values treat them as separators' do
+        expect(annotations.first).to end_with('::slow_thing: Rescue it, use: x')
       end
     end
 
@@ -62,7 +82,7 @@ describe Fastererer::Formatters::GithubFormatter do
       before { formatter.render(report(findings: findings, inspected: 1)) }
 
       it 'escapes it, keeping the command on a single line' do
-        expect(lines).to eq(['::warning file=a.rb,line=1::slow_thing: Slow\\x0Athing'])
+        expect(annotations).to eq(['::warning file=a.rb,line=1::slow_thing: Slow\\x0Athing'])
       end
     end
 
