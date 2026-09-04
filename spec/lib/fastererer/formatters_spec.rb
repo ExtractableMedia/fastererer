@@ -16,11 +16,15 @@ describe Fastererer::Formatters do
       expect(described_class.fetch('rdjsonl')).to eq(Fastererer::Formatters::RdjsonlFormatter)
     end
 
+    it 'returns the github formatter class' do
+      expect(described_class.fetch('github')).to eq(Fastererer::Formatters::GithubFormatter)
+    end
+
     context 'with an unknown format' do
       it 'names the offending format and lists the valid ones' do
         expect { described_class.fetch('bogus') }.to raise_error(
           Fastererer::UnknownFormatError,
-          'Unknown format: "bogus". Valid formats: text, json, rdjsonl.'
+          'Unknown format: "bogus". Valid formats: text, json, rdjsonl, github.'
         )
       end
     end
