@@ -104,6 +104,12 @@ describe 'Fastererer CLI' do
                                     'code' => include('value' => 'shuffle_first_vs_sample'))
     end
 
+    it 'emits a workflow command naming the configuration key with -f github' do
+      stdout, = Open3.capture3(fasterer_bin, '-f', 'github')
+
+      expect(stdout).to start_with('::warning file=user.rb,line=1::shuffle_first_vs_sample: ')
+    end
+
     it 'reports an unknown format on stderr and exits non-zero', :aggregate_failures do
       stdout, stderr, status = Open3.capture3(fasterer_bin, '--format', 'bogus')
       expect(stdout).to be_empty

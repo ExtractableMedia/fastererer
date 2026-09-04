@@ -10,6 +10,9 @@ module Fastererer
   class CLI
     OFFENSES_FOUND_STATUS = 1
     USAGE_ERROR_STATUS = 2
+    FORMAT_HELP = "Output format: #{Formatters::FORMATS.keys.join(', ')} " \
+                  '(text is the default)'.freeze
+    private_constant :FORMAT_HELP
 
     def self.execute(out: $stdout, err: $stderr)
       options = parse_options(ARGV.dup)
@@ -38,7 +41,7 @@ module Fastererer
     def self.build_parser(options)
       OptionParser.new do |opts|
         opts.banner = 'Usage: fastererer [options] [path]'
-        opts.on('-f', '--format FORMAT', 'Output format: text (default), json, rdjsonl') do |format|
+        opts.on('-f', '--format FORMAT', FORMAT_HELP) do |format|
           options[:format] = format
         end
         opts.on('--no-color', 'Disable ANSI color in output') { options[:no_color] = true }
