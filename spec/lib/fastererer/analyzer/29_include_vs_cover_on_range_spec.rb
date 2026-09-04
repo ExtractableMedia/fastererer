@@ -9,7 +9,8 @@ describe Fastererer::Analyzer do
 
   before { analyzer.scan }
 
-  it 'detects 3 include? method calls' do
-    expect(analyzer.errors[:include_vs_cover_on_range].count).to eq(3)
+  it 'flags include? only on a range receiver' do
+    offending_lines = analyzer.errors[:include_vs_cover_on_range].map(&:line)
+    expect(offending_lines).to contain_exactly(12, 15, 17)
   end
 end

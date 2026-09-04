@@ -49,3 +49,6 @@ lambda { |rule| rule.should_use_symbol }
 numbers.map { |number = 0| number.to_s }
 numbers.map { |*numbers| numbers.to_s }
 numbers.map { |number| number&.to_s }
+
+route_sets.each { |(name, routes), index| finalize }
+route_sets.each { |name, (routes, index)| name.to_s }

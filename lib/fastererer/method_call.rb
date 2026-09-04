@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 require 'prism'
+require 'fastererer/receiver'
 
 module Fastererer
   class MethodCall
+    include Receiver
+
     attr_reader :element
 
     def self.build(node)
@@ -25,6 +28,8 @@ module Fastererer
     def name
       method_name
     end
+
+    def call_name = method_name
 
     def arguments
       @arguments ||= argument_nodes.map { |argument| Argument.new(argument) }
@@ -75,7 +80,7 @@ module Fastererer
     end
 
     # Only single positional params convert to &:sym, so a splat or keyword param must not count
-    # toward block_argument_names.one?
+    # toward the single-name check
     def positional_block_parameter_names
       return [] unless block_node.is_a?(Prism::BlockNode)
 
@@ -130,15 +135,12 @@ module Fastererer
   end
 
   class VariableReference
+    include Receiver
+
     attr_reader :name
 
     def initialize(node)
       @name = node.name
-    end
-
-    # A bare local/constant reference can't be proven to hold a Hash
-    def hash?
-      false
     end
   end
 
@@ -180,6 +182,8 @@ module Fastererer
   end
 
   class Primitive
+    include Receiver
+
     attr_reader :element
 
     def initialize(node)
