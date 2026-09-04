@@ -657,9 +657,11 @@ two views a reader actually scans, and the collator quietly picks a winner.
 - Include a **Recommendation** (Implement / Defer / Skip) with a one-line rationale, so the reader
   knows whether the fix is worth making — not merely that it is possible
 - Redact rather than quote when the evidence is itself sensitive — a credential, token, connection
-  string, internal hostname or customer datum. Name the file and line and describe the value's
-  shape; do not reproduce it. This file is review scaffolding: it can be published verbatim into a
-  pull request comment on a public repository and is then deleted, so a quoted secret outlives both
+  string, internal hostname, private repository or internal system name, internal ticket ID,
+  absolute filesystem path, or customer datum. Name the file and line and describe the value's
+  shape; do not reproduce it. `CLAUDE.md`'s Public Repository section is the authority on the middle
+  few, and it governs this file because this file gets published: the review is scaffolding that can
+  go verbatim into a pull request comment here and is then deleted, so a quoted secret outlives both
   the file and the fix
 - When a snippet is itself Markdown containing a fenced block, open and close the outer fence with
   **four** backticks. A three-backtick outer fence is closed by the inner block's closing fence,
@@ -981,8 +983,11 @@ Save the complete review findings to `local-review.md` in the repository root. T
   summary, then the pre-merge checklist organized into implementation groups
 - A plan review writes the same sections to `plan-review.md` under a `# Plan Review` title (see the
   `--plan` parameter). Each file keeps its own title and its own finding numbers
-- **Leave the file untracked.** `local-review.md` is review scaffolding, not part of the change it
-  describes — do not `git add` it (see Review Scaffolding in `CLAUDE.md`)
+- **Leave the file untracked.** `local-review.md` and `plan-review.md` are review scaffolding, not
+  part of the change they describe — do not `git add` either (see Review Scaffolding in
+  `CLAUDE.md`). Both paths are in `.gitignore`, so a broad `git add` cannot sweep quoted source into
+  a public repository's history by accident; `git add -f` still tracks one deliberately, which is
+  what Review Scaffolding contemplates
 
 ### Merging with Existing Findings
 
@@ -1050,21 +1055,27 @@ mangles them.
 The comment should have this structure:
 
 - **Heading**: `## Local Review — [status summary]`
-- **Stats line**: `**[N findings — X actionable, Y observations]**`
-- **Body**: Full review content inside a `<details>` block
+- **Stats line**: the total finding count and a breakdown naming every bucket separately —
+  `**12 findings — 3 fixed, 2 deferred, 1 ignored, 2 open (1 decision), 4 observations**`
+- **Body**: full review content inside
+  `<details><summary>Click to expand full review details</summary>`
 
-The `<summary>` line should include the total finding count and a breakdown that names every bucket
-separately (e.g., "12 findings — 3 fixed, 2 deferred, 1 ignored, 2 open, 4 observations"). A ⚖️
-Decision still awaiting the user is named on its own — "2 open (1 decision)" — because it needs a
-person, not a fix. Deferred and ignored findings are off the pre-merge path but they are not
-resolved, so they never fold into the fixed count and never disappear into "actionable". Reserve
+The `<summary>` line itself is that fixed "Click to expand" text, per `CLAUDE.md` — the counts go on
+the stats line above it, not inside the summary. A ⚖️ Decision still awaiting the user is named on
+its own — "2 open (1 decision)" — because it needs a person, not a fix. Deferred and ignored
+findings are off the pre-merge path but they are not resolved, so they never fold into the fixed
+count and never disappear into "actionable". Reserve
 "all clear" for a review in which every actionable finding is ✅ Fixed: "12 findings — 8 fixed, 4
-observations — all clear". Never write it while a 🔴 Critical, a 🟠 High or a ⚖️ Decision sits at any
-status other than ✅ Fixed, however its checkbox reads — a ticked box means the finding is off the
-pre-merge path, not that the issue is gone.
+observations — all clear". A ⏸️ Deferred or 🚫 Ignored finding is off the pre-merge path but it is
+not fixed, so it disqualifies the phrase however its checkbox reads — a ticked box means the finding
+needs nothing before merge, not that the issue is gone.
 
-This repository is public, so the comment is world-readable. Re-read the Actionable Feedback
-redaction rule before posting.
+This repository is public, so the comment is world-readable — and GitHub keeps a comment's edit
+history, so a correction does not retract what was posted. Before posting, read the assembled body
+end to end and **apply** the Actionable Feedback redaction rule to it, rather than recalling that it
+exists: the reviewers wrote these findings, and a reviewer whose prompt omitted the rule cannot have
+applied it. Normalize any absolute path to a repository-relative one in the same pass. Where a line
+is doubtful, redact it — posting and editing afterwards does not undo it.
 
 ### Interactive Finding Selection
 
