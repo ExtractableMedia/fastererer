@@ -4,7 +4,9 @@
 
 If the user provided additional context: `$ARGUMENTS`
 
-Parse `$ARGUMENTS` for the following flags. Flags can be combined.
+Parse `$ARGUMENTS` for the following flags. `--plan` and `--reconcile` are **mutually exclusive** —
+one runs a fresh review of a plan document, the other refuses to add or re-evaluate any finding. If
+both are present, say so and ask which was meant rather than picking one.
 
 ### `--plan`
 
@@ -13,10 +15,20 @@ reviewers evaluate the **plan document** rather than a change set.
 
 **Plan file resolution:**
 
-1. If a `PLAN.md` file exists in the repository root, use that.
-1. Otherwise, check `~/.claude/plans/` for the most recently modified `.md` file in the current
-   project's plans directory and use that.
-1. If no plan file is found, inform the user and abort.
+1. If `$ARGUMENTS` names a path, review that file.
+1. Otherwise, list every candidate in the repository — `PLAN.md`, `PLANS.md` and any `*_plan.md`,
+   which are the conventions `CLAUDE.md` names — and ask which to review. Ask even when there is
+   only one: a plan review quotes the document into a file that gets published, so the user should
+   know which document that is.
+1. If no candidate exists, inform the user and abort.
+
+Never auto-select from `~/.claude/plans/`. That directory is flat and shared across every project,
+its filenames are opaque generated slugs, and the most recently modified file in it may belong to
+private work. Plan mode quotes the plan into `plan-review.md` in this repository's root, and that
+file can be published verbatim into a pull request comment here — where `CLAUDE.md`'s Public
+Repository rules forbid naming private repositories, internal systems and internal ticket IDs, which
+is exactly the vocabulary a private plan is written in. GitHub keeps a comment's edit history, so
+the mistake is not fully retractable.
 
 **Reviewer behavior in plan mode:**
 
@@ -43,9 +55,8 @@ reviewers evaluate the **plan document** rather than a change set.
 
 **Which reviewers to invoke in plan mode:**
 
-Invoke the same reviewers as for code reviews, but base the decision on what the plan **describes
-modifying** rather than which files have actually changed. Always invoke
-code-best-practices-reviewer, ruby-expert, security-reviewer, and test-suite-architect.
+Invoke the same four reviewers as for code reviews: code-best-practices-reviewer, ruby-expert,
+security-reviewer and test-suite-architect. There is no selection to make — see Reviewers below.
 
 ### `--reconcile`
 
@@ -97,9 +108,11 @@ Assess the current state of findings in a review file and mark completed items. 
    F4.").
 
 **Important:** Do not re-evaluate the severity or content of findings. Do not add new findings. Do
-not remove findings. Only update the status of findings that have been addressed. Skip findings
-already marked 🚫 Ignored or ⏸️ Deferred — their status was explicitly set and should only be changed
-by the user.
+not remove findings. Only update the status of findings that have been addressed — and their file
+and line citations, which must be re-located and corrected in place before the finding is judged.
+That is the one content edit this pass makes, and it is what keeps the judgment honest: a citation
+that has drifted points at whatever now sits on that line, and a pass that reads it without
+correcting it decides the finding against the wrong code.
 
 ✅ Fixed is the **only** status a reconciliation pass may apply, because it is the only one this pass
 can establish by reading the code. A finding that is still present stays ❓ Open — never move it to
@@ -123,8 +136,21 @@ The **change set** defines which changes the reviewers should analyze.
 
 - If `$ARGUMENTS` (excluding any flags parsed above) specifies a change set (e.g., a commit range,
   specific files, or a description of what to review), use that as the change set.
-- Otherwise, the default change set is **the changes on this branch** (i.e., all commits on the
-  current branch that are not on the base branch).
+- Otherwise, the default change set is **the changes on this branch**: the commits reachable from
+  `HEAD` but not from the base branch, and the diff between them.
+
+The base branch is the repository's default branch. Resolve it rather than assuming:
+
+```bash
+BASE=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || echo main)
+git log --oneline "$BASE"..HEAD    # the commits under review
+git diff "$BASE"...HEAD            # the diff under review
+```
+
+If `HEAD` is the base branch, or the commit list is empty, there is nothing to review: say so and
+stop rather than dispatching four reviewers against an empty diff. If the branch is stacked on
+another feature branch, the default comparison spans both — say which base you used, and offer the
+parent branch as an alternative.
 
 All reviewer instructions below refer to "the change set" — this always means the change set
 determined above.
