@@ -14,14 +14,34 @@ module Fastererer
     def self.execute(out: $stdout, err: $stderr)
       options = parse_options(ARGV.dup)
       formatter = Formatters.fetch(options[:format] || 'text').new(out:, err:)
-    rescue UnknownFormatError, OptionParser::ParseError => e
+      scan(options, formatter, err)
+    rescue UnknownFormatError, OptionParser::ParseError, ConfigError => e
       err.puts(e.message)
       exit USAGE_ERROR_STATUS
-    else
+    end
+
+    # The config is read before the scan, so a broken one reports instead of half-scanning
+    def self.scan(options, formatter, err)
       Painter.disable! if options[:no_color]
       file_traverser = FileTraverser.new(options[:path], formatter:)
+      report_held_back_speedups(file_traverser.config, err)
       file_traverser.traverse
       exit_with_status_for(file_traverser)
+    end
+
+    # Held back on stderr, never stdout, so a machine format stays parseable
+    def self.report_held_back_speedups(config, err)
+      return unless config.new_speedups_mode == :warn
+
+      held_back = config.pending_speedups
+      err.puts(held_back_notice(held_back)) unless held_back.empty?
+    end
+
+    def self.held_back_notice(held_back)
+      subject = held_back.one? ? 'speedup is' : 'speedups are'
+      ["fastererer: #{held_back.count} new #{subject} held back: #{held_back.join(', ')}.",
+       'Set new_speedups to `enable` to turn new speedups on, or list them under `speedups:` ' \
+       'to decide one at a time.']
     end
 
     def self.exit_with_status_for(file_traverser)

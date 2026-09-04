@@ -53,19 +53,19 @@ module Fastererer
     end
 
     def fetch_hash(loaded, key)
-      fetch_typed(loaded, key, Hash) || {}
+      fetch_typed(loaded, key, Hash, 'a mapping') || {}
     end
 
     def fetch_array(loaded, key)
-      fetch_typed(loaded, key, Array) || []
+      fetch_typed(loaded, key, Array, 'a list') || []
     end
 
-    def fetch_typed(loaded, key, type)
+    def fetch_typed(loaded, key, type, shape)
       value = loaded[key]
       return if value.nil?
       return value if value.is_a?(type)
 
-      raise ConfigError, "#{path}: #{key} must be #{type.name.downcase}, not #{value.class}"
+      raise ConfigError, "#{path}: #{key} must be #{shape}, not #{value.class}"
     end
   end
 end

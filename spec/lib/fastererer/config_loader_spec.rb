@@ -81,7 +81,7 @@ describe Fastererer::ConfigLoader do
       before { create_file(path, ['exclude_paths: tmp/*.rb']) }
 
       it 'raises' do
-        expect { described_class.load(path) }.to raise_error(Fastererer::ConfigError, /array/)
+        expect { described_class.load(path) }.to raise_error(Fastererer::ConfigError, /list/)
       end
     end
 

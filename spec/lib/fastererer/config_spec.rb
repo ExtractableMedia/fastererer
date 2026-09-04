@@ -57,6 +57,91 @@ describe Fastererer::Config do
         expect(described_class.new.ignored_speedups).to be_empty
       end
     end
+
+    context 'with a pending speedup and new_speedups set to enable' do
+      before { create_file(described_class::FILE_NAME, pending_config('enable')) }
+
+      it 'turns it on' do
+        expect(described_class.new.ignored_speedups).not_to include(:gsub_vs_tr)
+      end
+    end
+
+    context 'with a pending speedup and new_speedups set to warn' do
+      before { create_file(described_class::FILE_NAME, pending_config('warn')) }
+
+      it 'holds it back' do
+        expect(described_class.new.ignored_speedups).to contain_exactly(:gsub_vs_tr)
+      end
+    end
+
+    context 'with a pending speedup and new_speedups set to disable' do
+      before { create_file(described_class::FILE_NAME, pending_config('disable')) }
+
+      it 'leaves it off' do
+        expect(described_class.new.ignored_speedups).to contain_exactly(:gsub_vs_tr)
+      end
+    end
+  end
+
+  describe '#pending_speedups' do
+    include_context 'isolated environment'
+
+    context 'with nothing marked pending' do
+      it 'is empty' do
+        expect(described_class.new.pending_speedups).to be_empty
+      end
+    end
+
+    context 'with a speedup marked pending' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: pending']) }
+
+      it 'names it' do
+        expect(described_class.new.pending_speedups).to contain_exactly(:gsub_vs_tr)
+      end
+    end
+  end
+
+  describe '#new_speedups_mode' do
+    include_context 'isolated environment'
+
+    context 'with no project config file' do
+      it 'holds new speedups back' do
+        expect(described_class.new.new_speedups_mode).to eq(:warn)
+      end
+    end
+
+    context 'with the mode set to enable' do
+      before { create_file(described_class::FILE_NAME, ['new_speedups: enable']) }
+
+      it 'reports enable' do
+        expect(described_class.new.new_speedups_mode).to eq(:enable)
+      end
+    end
+
+    context 'with the mode set to disable' do
+      before { create_file(described_class::FILE_NAME, ['new_speedups: disable']) }
+
+      it 'reports disable' do
+        expect(described_class.new.new_speedups_mode).to eq(:disable)
+      end
+    end
+
+    context 'with the mode set to pending' do
+      before { create_file(described_class::FILE_NAME, ['new_speedups: pending']) }
+
+      it 'treats it as a synonym for warn, for anyone arriving from RuboCop' do
+        expect(described_class.new.new_speedups_mode).to eq(:warn)
+      end
+    end
+
+    context 'with a mode outside the known set' do
+      before { create_file(described_class::FILE_NAME, ['new_speedups: sometimes']) }
+
+      it 'raises' do
+        config = described_class.new
+        expect { config.new_speedups_mode }.to raise_error(Fastererer::ConfigError, /new_speedups/)
+      end
+    end
   end
 
   describe '#ignored_files' do
@@ -172,6 +257,10 @@ describe Fastererer::Config do
   end
 
   private
+
+  def pending_config(mode)
+    ['speedups:', '  gsub_vs_tr: pending', "new_speedups: #{mode}"]
+  end
 
   def default_speedups
     Fastererer::DefaultConfig.load[described_class::SPEEDUPS_KEY]
