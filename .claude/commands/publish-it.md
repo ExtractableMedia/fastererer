@@ -89,13 +89,13 @@ the repository root, so run from there:
    git fetch --tags origin
    ```
 
-### Step 1: Reconcile the changelog against merged PRs
+### Step 1: Reconcile the changelog against merged pull requests
 
 `/ship-it` should already have recorded each merged change, so this step normally finds nothing to
 add. It runs first regardless, because Step 2's suggested bump reads `[Unreleased]` and is only
 trustworthy against a complete section.
 
-1. **List PRs merged into `main` since the last version tag:**
+1. **List pull requests merged into `main` since the last version tag:**
 
    ```bash
    LAST_TAG=$(git describe --tags --abbrev=0)
@@ -105,17 +105,17 @@ trustworthy against a complete section.
    ```
 
    The `cut` truncates the tag's commit timestamp to `YYYY-MM-DD`, which is the format GitHub's
-   search API matches reliably (full ISO 8601 timestamps can produce edge-case misses for PRs merged
-   in the same minute).
+   search API matches reliably (full ISO 8601 timestamps can produce edge-case misses for pull
+   requests merged in the same minute).
 
-1. **Add an entry for every merged PR that isn't represented.** Compare the list against the
-   `[Unreleased]` section, and for each PR with no entry ask the user via `AskUserQuestion` whether
-   to add it and under which Keep a Changelog section.
+1. **Add an entry for every merged pull request that isn't represented.** Compare the list against
+   the `[Unreleased]` section, and for each pull request with no entry ask the user via
+   `AskUserQuestion` whether to add it and under which Keep a Changelog section.
 
-   Entries use reference-style links, so each new `[#N]` needs a matching
-   `[#N]: https://github.com/ExtractableMedia/fastererer/pull/N` def in the block at the bottom of
-   the file, keeping its ascending-by-number order — use `/issues/N` where the reference is an issue
-   rather than a PR. Without the def the entry renders literally as `[#N]` on GitHub.
+   Write the entry exactly as `/ship-it` Step 8 describes — the leading `[#N]:` label, the matching
+   link definition in the block at the bottom, ascending by number. That step is the primary path
+   and this one is the exception, so keep the format defined in one place rather than restating it
+   here and letting the two drift.
 
 1. **If nothing needed adding, continue to Step 2.** That is the expected outcome when `/ship-it`
    has been run on each branch, and it is not a reason to stop — the release itself is still ahead.
@@ -147,23 +147,30 @@ trustworthy against a complete section.
 1. **Confirm the version** with the user via `AskUserQuestion`, presenting the suggested default and
    letting them override (e.g., to skip ahead, or to reclassify a change the heuristic misread).
 
-1. **Capture the confirmed version into `NEW_VERSION`** for use in all later steps. Every subsequent
-   code block assumes this variable is set:
+1. **Validate the answer before it reaches a shell command,** while it is still a string returned by
+   `AskUserQuestion`:
+
+   - Must match `^\d+\.\d+\.\d+$`
+   - Must be greater than the current version
+
+   Validating first is the point — the assignment below is where a malformed value would first be
+   interpreted, so a check placed after it guards every later use except the one that introduces it.
+
+1. **Capture the confirmed version into `NEW_VERSION`.** Like `RUN_DIR`, this is a placeholder
+   rather than a live variable: each Bash call runs in its own shell, so it does not survive to the
+   next command. Record the value and write it literally into every later block — the same applies
+   to `BRANCH`, `TITLE`, `SHA` and `RUN_ID`.
 
    ```bash
    NEW_VERSION="X.Y.Z"   # replace with the version returned by AskUserQuestion
    ```
 
-1. **Validate the chosen version:**
+1. **Confirm the matching `vX.Y.Z` tag does not already exist,** locally or on origin:
 
-   - Must match `^\d+\.\d+\.\d+$`
-   - Must be greater than the current version
-   - The matching `vX.Y.Z` tag must not already exist locally or on origin:
-
-     ```bash
-     git tag --list "v$NEW_VERSION" | grep . && echo "tag exists locally"
-     git ls-remote --tags origin "refs/tags/v$NEW_VERSION" | grep . && echo "tag exists on origin"
-     ```
+   ```bash
+   git tag --list "v$NEW_VERSION" | grep . && echo "tag exists locally"
+   git ls-remote --tags origin "refs/tags/v$NEW_VERSION" | grep . && echo "tag exists on origin"
+   ```
 
    If the tag exists on origin, abort — that version is already released. If it exists locally but
    not on origin, it is most likely a leftover from an aborted run: confirm with the user, then
@@ -196,7 +203,7 @@ trustworthy against a complete section.
    - Add a new `[X.Y.Z]: .../compare/vPREV...vX.Y.Z` def directly below `[Unreleased]`, preserving
      the descending order of older versions
 
-### Step 4: Commit, push, open PR, watch CI, merge
+### Step 4: Commit, push, open pull request, watch CI, merge
 
 1. **Set the branch and title:**
 
@@ -234,7 +241,7 @@ trustworthy against a complete section.
 1. **Commit using `/commit`,** with `$TITLE` as the suggested subject. The body should summarize the
    change types being released — the counts under each Keep a Changelog section heading.
 
-1. **Push and open a PR:**
+1. **Push and open a pull request:**
 
    ```bash
    git push -u origin "$BRANCH"
@@ -368,8 +375,8 @@ reset; the user may have intentional local state.
    heading that doesn't take the `## [X.Y.Z] - YYYY-MM-DD` form Step 3 wrote — abort and fix the
    heading rather than publishing a release whose body is nothing but the footer.
 
-1. **Convert `[#N]` reference-style PR refs to bare `#N`** so they render without bracket cruft in
-   the release body (GitHub's autolinker handles `#N` in repo-context release pages):
+1. **Convert `[#N]` reference-style pull request refs to bare `#N`** so they render without bracket
+   cruft in the release body (GitHub's autolinker handles `#N` in repo-context release pages):
 
    ```bash
    ruby -i -pe 'gsub(/\[#(\d+)\]/, "#\\1")' "$RUN_DIR/release-notes.md"
@@ -446,7 +453,7 @@ reset; the user may have intentional local state.
    Leave it in place if the verification above failed — it holds the release notes as they were
    assembled, which is what `gh release edit` needs to correct the posted body.
 
-## Interactive Confirmations
+## Interactive confirmations
 
 Use `AskUserQuestion` to confirm key decision points:
 
@@ -460,9 +467,9 @@ Use `AskUserQuestion` to confirm key decision points:
 - **Step 6** — Confirm before creating and pushing the tag. The push starts the gated release
   workflow, and once a human approves the deployment the published gem can be yanked but not deleted
 
-## Important Notes
+## Important notes
 
-- **Never** create a release commit directly on `main` — always go through a PR
+- **Never** create a release commit directly on `main` — always go through a pull request
 - **Never** force-push `main` or replace an existing tag with a new target
 - **Never** approve the `rubygems` environment gate on the user's behalf — surface the run URL and
   let them approve it
@@ -484,7 +491,7 @@ Use `AskUserQuestion` to confirm key decision points:
 - **Recording changes is `/ship-it`'s job.** Step 1 exists to catch what merged without it, not as
   the normal route — a reconcile that keeps finding gaps means branches are skipping `/ship-it`
 
-## Example Workflow
+## Example workflow
 
 ```text
 $ /publish-it
