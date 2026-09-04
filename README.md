@@ -225,14 +225,22 @@ commands straight off stdout and renders them as inline annotations:
   run: bundle exec fastererer -f github
 ```
 
-Every finding is reported; nothing is filtered to the pull request diff. As with reviewdog, run
-fastererer from the repository root and let the path default to `.`, since annotations are anchored
-by repository-relative path.
+fastererer exits `1` when it finds anything, so this step fails the job. The annotations render
+either way — add `continue-on-error: true` if you want them as advisory notes only. The reviewdog
+pipeline above exits with reviewdog's status rather than fastererer's, so it does not fail the job
+on findings by default.
 
-GitHub caps annotations at [10 warnings per step and 50 per job][annotation-limits], and silently
-drops the rest with no indication in the UI. Below that ceiling this is the simplest possible
-integration; above it, prefer the reviewdog path, which has no such cap and posts threaded,
-resolvable review comments — at the cost of installing reviewdog and granting it a token.
+Every finding is emitted; nothing is filtered to the pull request diff. As with reviewdog, findings
+on lines the pull request does not touch appear in the check run's annotation list rather than
+inline in Files Changed. Run fastererer from the repository root and let the path default to `.`,
+since annotations are anchored by repository-relative path — an absolute path both fails to anchor
+and puts the runner's directory layout in a publicly visible check run.
+
+GitHub caps Actions annotations at [10 warnings per step][annotation-limits], and silently drops
+the rest with no indication in the UI. Below that ceiling this is the simplest possible
+integration; above it, prefer the reviewdog path, which paginates past the Checks API's
+per-request limit and posts threaded, resolvable review comments — at the cost of installing
+reviewdog and granting it a token.
 
 Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
 [no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output
@@ -279,6 +287,7 @@ Fastererer carries forward [Damir Svrtan][damir-svrtan]'s [fasterer][fasterer] (
 fork point). Thanks to Damir for the original work, and to the [fast-ruby][fast-ruby] community
 for the idiom catalog that drives the speed checks.
 
+[annotation-limits]: https://docs.github.com/en/rest/checks/runs
 [damir-svrtan]: https://github.com/DamirSvrtan
 [discussions]: https://github.com/ExtractableMedia/fastererer/discussions
 [fast-ruby]: https://github.com/fastruby/fast-ruby
@@ -286,7 +295,6 @@ for the idiom catalog that drives the speed checks.
 [issues]: https://github.com/ExtractableMedia/fastererer/issues
 [prism]: https://github.com/ruby/prism
 [rdf]: https://github.com/reviewdog/reviewdog/tree/master/proto/rdf
-[workflow-commands]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
-[annotation-limits]: https://github.com/orgs/community/discussions/26680
 [roadmap-project]: https://github.com/orgs/ExtractableMedia/projects/1
 [sferik-talk]: https://speakerdeck.com/sferik/writing-fast-ruby
+[workflow-commands]: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
