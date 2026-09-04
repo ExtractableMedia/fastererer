@@ -37,6 +37,12 @@ module Fastererer
       findings.any?
     end
 
+    def path_missing?
+      return @path_missing if defined?(@path_missing)
+
+      @path_missing = !@path.exist?
+    end
+
     def scannable_files
       all_files - ignored_files
     end
@@ -46,14 +52,13 @@ module Fastererer
     attr_reader :findings
 
     def build_report
-      path_exists = @path.exist?
-      scan_files if path_exists
+      scan_files
 
       Report.new(
         findings:,
         files_inspected_count: scannable_files.count,
         unparsable_files: parse_error_paths,
-        missing_path: (@path.to_s unless path_exists)
+        missing_path: (@path.to_s if path_missing?)
       )
     end
 
@@ -82,17 +87,13 @@ module Fastererer
     end
 
     def all_files
-      if @path.directory?
-        Dir[File.join(@path, '**', '*.rb')].map do |ruby_file_path|
-          Pathname(ruby_file_path).relative_path_from(root_dir).to_s
-        end
-      else
-        [@path.to_s]
-      end
-    end
+      return [] if path_missing?
+      return [@path.to_s] unless @path.directory?
 
-    def root_dir
-      @root_dir ||= Pathname('.')
+      # base: takes the directory literally; interpolating it would read [ ] { } * ? as pattern
+      Dir.glob('**/*.rb', base: @path.to_s).map do |relative_path|
+        Pathname(File.join(@path, relative_path)).cleanpath.to_s
+      end
     end
 
     def ignored_speedups

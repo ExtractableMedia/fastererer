@@ -197,6 +197,21 @@ describe Fastererer::FileTraverser do
     end
   end
 
+  describe '#path_missing?' do
+    it 'is true for a path that does not exist' do
+      expect(described_class.new('no_such_path')).to be_path_missing
+    end
+
+    it 'is false for a file that exists' do
+      create_file('user.rb', '[].sample')
+      expect(described_class.new('user.rb')).not_to be_path_missing
+    end
+
+    it 'is false for a directory that exists' do
+      expect(described_class.new('.')).not_to be_path_missing
+    end
+  end
+
   describe 'scannable files' do
     let(:file_traverser) { described_class.new(argument) }
 
@@ -390,16 +405,40 @@ describe Fastererer::FileTraverser do
       end
       # rubocop:enable RSpec/NestedGroups
     end
+
+    context 'with a folder argument containing glob metacharacters' do
+      let(:argument) { 'pkg[1]' }
+
+      before { create_file('pkg[1]/something.rb') }
+
+      it 'treats the name literally rather than as a pattern' do
+        expect(file_traverser.scannable_files).to contain_exactly('pkg[1]/something.rb')
+      end
+    end
   end
 
   describe 'non-existent path' do
+    let(:out) { StringIO.new }
     let(:err) { StringIO.new }
-    let(:formatter) { Fastererer::Formatters::TextFormatter.new(out: StringIO.new, err: err) }
+    let(:formatter) { Fastererer::Formatters::TextFormatter.new(out: out, err: err) }
     let(:file_traverser) { described_class.new('no_such_path', formatter: formatter) }
+
+    before { Fastererer::Painter.disable! }
+
+    after { Fastererer::Painter.enable! }
 
     it 'routes a missing-path message to stderr' do
       file_traverser.traverse
       expect(err.string).to include('No such file or directory')
+    end
+
+    it 'counts the missing path as no files inspected' do
+      file_traverser.traverse
+      expect(out.string).to include('0 files inspected, 0 offenses detected')
+    end
+
+    it 'finds nothing to scan' do
+      expect(file_traverser.scannable_files).to be_empty
     end
   end
 

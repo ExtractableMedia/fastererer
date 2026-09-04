@@ -16,6 +16,9 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 - [#77]: `FileTraverser#parse_error_paths` now returns `ErrorData` objects rather than preformatted
   strings, so the path, error class and message stay separately addressable. Call `to_s` on an
   entry for the previous string form.
+- [#84]: A path that does not exist now exits with status `2` instead of `0`. Status `1` still
+  means "offenses were found", so a CI job or wrapper script can tell a mistyped path from a real
+  finding. The exit codes are documented in the README.
 
 ### Removed
 
@@ -27,6 +30,16 @@ Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/Dam
 - [#77]: The "N offenses detected" statistics line no longer counts offenses suppressed by
   `speedups: <rule>: false` in `.fastererer.yml`. The total previously included suppressed
   offenses, so it could exceed the number of offense lines printed; the two now agree.
+- [#84]: An unknown flag now prints its message and exits `2` instead of dumping a Ruby backtrace
+  and exiting `1`. Exiting `1` made a mistyped flag indistinguishable from a real finding.
+- [#84]: A directory whose name contains glob metacharacters (`pkg[1]`, `a{b}`) is now scanned.
+  The name was interpolated into the glob pattern, so such a directory silently reported
+  `0 files inspected` and exited `0`. Passing an absolute directory path no longer raises
+  `ArgumentError` either.
+- [#84]: A missing path no longer reports a clean scan. `fastererer no_such_path` printed
+  `1 file inspected, 0 offenses detected` and exited `0`, so a renamed or mistyped directory in CI
+  stopped linting while the build stayed green. The statistics line now reads
+  `0 files inspected, 0 offenses detected` and the run fails.
 
 ## [1.0.0] - 2026-06-05
 
@@ -166,3 +179,4 @@ First stable release of `fastererer` after the fork.
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42
 [#77]: https://github.com/ExtractableMedia/fastererer/issues/77
+[#84]: https://github.com/ExtractableMedia/fastererer/pull/84

@@ -15,8 +15,9 @@ describe Fastererer::CLI do
     context 'when a scanned file has an offense' do
       before { create_file('user.rb', '[].shuffle.first') }
 
-      it 'aborts so the shell sees a failing status' do
-        expect { described_class.execute }.to raise_error(SystemExit)
+      it 'exits 1 so the shell sees a failing status', :aggregate_failures do
+        expect { described_class.execute }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(1) }
       end
     end
 
@@ -25,6 +26,26 @@ describe Fastererer::CLI do
 
       it 'returns without aborting' do
         expect { described_class.execute }.not_to raise_error
+      end
+    end
+
+    context 'when the given path does not exist' do
+      let(:argv) { ['no_such_path'] }
+
+      it 'warns on stderr and exits 2 to distinguish a usage error', :aggregate_failures do
+        expect { described_class.execute }
+          .to output(/No such file or directory/).to_stderr
+          .and raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
+      end
+    end
+
+    context 'when given an unknown flag' do
+      let(:argv) { ['--nope'] }
+
+      it 'warns on stderr and exits 2 rather than dumping a backtrace', :aggregate_failures do
+        expect { described_class.execute }
+          .to output(/invalid option: --nope/).to_stderr
+          .and raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
       end
     end
 
