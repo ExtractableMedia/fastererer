@@ -9,6 +9,8 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-04
+
 ### Added
 
 - [#40]: A `-f`/`--format` flag with machine-readable output formats alongside the default `text`:
@@ -21,17 +23,9 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 - [#77]: Parse errors and the "No such file or directory" message now go to STDERR instead of
   STDOUT. STDOUT carries only offense lines and the statistics line, so it can be piped, grepped or
   redirected on its own.
-- [#77]: `FileTraverser#parse_error_paths` now returns `ErrorData` objects rather than preformatted
-  strings, so the path, error class and message stay separately addressable. Call `to_s` on an
-  entry for the previous string form.
 - [#84]: A path that does not exist now exits with status `2` instead of `0`. Status `1` still
   means "offenses were found", so a CI job or wrapper script can tell a mistyped path from a real
   finding. The exit codes are documented in the README.
-
-### Removed
-
-- [#77]: The `FileTraverser#offenses_total_count` accessor. The command-line interface never used
-  it; scripts that read it directly will need updating.
 
 ### Fixed
 
@@ -177,7 +171,8 @@ First stable release of `fastererer` after the fork.
 
 [Keep a Changelog]: https://keepachangelog.com
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
-[Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ExtractableMedia/fastererer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ExtractableMedia/fastererer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.12.0...v1.0.0
 [0.12.0]: https://github.com/ExtractableMedia/fastererer/compare/v0.11.0...v0.12.0
 [#1]: https://github.com/ExtractableMedia/fastererer/pull/1
