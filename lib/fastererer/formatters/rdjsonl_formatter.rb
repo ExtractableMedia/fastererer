@@ -6,6 +6,7 @@ require_relative 'base'
 module Fastererer
   module Formatters
     # Shape is pinned to reviewdog's Diagnostic schema: WARNING severity, start-only range
+    # code.value is the rule key, not the display name — the reader pastes it into .fastererer.yml
     class RdjsonlFormatter < Base
       SEVERITY = 'WARNING'
       private_constant :SEVERITY
@@ -25,7 +26,7 @@ module Fastererer
             'range' => { 'start' => { 'line' => finding.line } }
           },
           'severity' => SEVERITY,
-          'code' => { 'value' => finding.rule_name, 'url' => finding.url }
+          'code' => { 'value' => finding.rule_key, 'url' => finding.url }
         }
       end
     end
