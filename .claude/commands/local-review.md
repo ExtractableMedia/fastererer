@@ -277,16 +277,35 @@ Instruct ruby-expert to analyze the change set. This should include:
 
 - **Idiomatic Ruby & object design** — POODR principles, single responsibility, composition over
   inheritance, value objects, narrow error handling
-- **Prism AST traversal** — Correct visitor/`visit_*` recursion, matching the right node types (e.g.
-  `CallNode` and its safe-navigation flag, `ForNode`, block/symbol-to-proc shapes), accurate
-  location reporting, resilience to partial parses
-- **Scanner & rule design** — One check per scanner, registration through the rule catalog with a
-  stable rule name and explanation, separation of detection from output, controlling false positives
-  vs false negatives
+- **Prism AST traversal** — Correct visitor/`visit_*` recursion (`Prism::Visitor` descends only
+  where an override calls `super`, and `AnalyzerVisitor` relies on that in both directions),
+  matching the right node types (e.g. `CallNode` and its safe-navigation flag, `ForNode`,
+  block/symbol-to-proc shapes), and accurate location reporting — an offense records
+  `element.location.start_line` and nothing finer. Scanners reach nodes through the wrapper layer
+  (`MethodCall.build`, `MethodDefinition`, `RescueCall`, `ReceiverFactory`) rather than
+  pattern-matching `Prism::` constants inline; a check that needs a new node fact extends a wrapper
+- **Parse failure is handled at one seam** — `Parser.parse` raises and `FileTraverser#scan_file`
+  rescues, so a scanner always receives a fully parsed tree. Defensive nil-guards inside a scanner
+  are unreachable branches, and the branch-coverage floor fails the build for them
+- **Scanner & rule design** — Scanners are keyed to Prism node types, one per `visit_*` hook in
+  `AnalyzerVisitor`, not to rules: `MethodCallScanner` dispatches many checks from its frozen
+  `CHECKERS` table, so a new call-based rule is a `check_*_offense` method plus a `CHECKERS` entry
+  rather than a new scanner class. A rule exists because `config/locales/en.yml` carries its
+  `description` and `url` under `en.fastererer.rules` — nothing registers anywhere; `RuleCatalog`
+  validates that file and `RuleName` derives the display name. Separation of detection from output;
+  controlling false positives vs false negatives
 - **Gem packaging** — `fastererer.gemspec` correctness, `required_ruby_version`, the version
-  constant and `Gemfile.lock` moving together, `exe/` executable hygiene and exit codes
-- **Performance** — The analyzer must be fast itself: watch allocations in hot traversal paths,
-  prefer lazy/streaming over large intermediates, optimize only measured bottlenecks
+  constant and `Gemfile.lock` moving together, `exe/` executable hygiene and exit codes.
+  `spec.files` is built from `git ls-files`, so an **untracked** file under `lib/`, `exe/` or
+  `config/` is silently absent from the built gem while every local test passes — a missing
+  `config/locales/` entry breaks `RuleCatalog` for installed users. The gem has exactly one runtime
+  dependency; development dependencies belong in the `Gemfile`
+- **Performance** — The analyzer must be fast itself: watch allocations in hot traversal paths and
+  prefer lazy/streaming over large intermediates. There is no benchmark or profiling harness in the
+  tree, so nothing here can be measured — raise performance work as an observation rather than
+  recommending an unmeasured optimization. Note that visitors are single-use by design:
+  `AnalyzerVisitor` holds the per-file `OffenseCollector` and `ProcCallVisitor` latches its result,
+  so hoisting a visitor out of its loop to save allocations leaks state between files
 
 ### Security
 
@@ -296,14 +315,24 @@ This should include:
 
 - **Untrusted input handling** — The analyzer must never `eval`, `require`, or otherwise execute the
   source it inspects; parsing is the only safe operation
-- **Denial of service** — Catastrophic regex backtracking (ReDoS), unbounded recursion on deeply
-  nested ASTs, or pathological files that exhaust memory
-- **Filesystem safety** — Path traversal when resolving/globbing target files, following symlinks,
-  honoring config without escaping the project root
+- **Denial of service** — Unbounded recursion on deeply nested ASTs (`Prism::Visitor` descends
+  recursively, and `SystemStackError` is among the errors `FileTraverser` rescues), or pathological
+  files that exhaust memory. Regexes are not a standing concern here — the only two in `lib/` match
+  the gem's own packaged locale file, and all lexing is Prism's — so raise ReDoS only when a change
+  introduces a regex over scanned source
+- **Filesystem and config trust** — Path traversal or glob metacharacters when resolving target
+  files, and following symlinks. The config trust boundary is the live one: `Config` ascends from
+  the working directory to the filesystem root looking for `.fastererer.yml`, so a config file
+  outside the project can silently govern a run and its `exclude_paths` reach `Dir[]` unvalidated,
+  masking offenses with no diagnostic that an external config was used
 - **Command & argument injection** — Shelling out (`system`, backticks, `Open3`) with unsanitized
   paths or CLI arguments
 - **Information exposure** — Leaking absolute paths, environment, or file contents in error messages
   and backtraces
+- **Terminal output injection** — Paths and Prism error messages derive from the scanned source, so
+  every value reaching `$stdout`/`$stderr` must pass through the text formatter's `sanitize`, which
+  escapes control bytes (`\x1B` among them) and scrubs invalid encoding. A new diagnostic line that
+  prints an untrusted value directly regresses a defense nothing else enforces
 - **Supply chain** — Dependency and gemspec hygiene (`rubygems_mfa_required`, pinned/locked
   versions, no unexpected runtime dependencies)
 
@@ -313,11 +342,27 @@ Instruct test-suite-architect to analyze the change set and provide recommendati
 coverage. This should include:
 
 - **Missing tests** — New code paths, edge cases, or functionality that lack test coverage. The
-  coverage floors are 100% line and branch, so an unexercised guard clause fails the build
+  coverage floors are 100% line and branch, so an unexercised guard clause fails the build — but
+  `.simplecov` applies them only to a whole-suite `bin/rspec` naming no path and none of
+  `-e`/`--example`/`-t`/`--tag`. A narrowed run reports coverage without failing on it, so run the
+  suite whole (it takes seconds) before claiming coverage holds. Coverage spans every file under
+  `lib/`, so a new file nothing requires reports zero and fails the run with every spec green
 - **Tests to update** — Existing tests that may need modification due to changed behavior
 - **Tests to remove** — Obsolete tests for removed functionality or redundant coverage
 - **Test quality concerns** — Brittle tests, improper mocking, or tests that don't actually verify
   behavior
+- **Spec conventions** — Read `spec/CLAUDE.md`; it is a nested memory file and does not load into a
+  subagent's context on its own. Two of its rules carry most of the weight: a scenario spec asserts
+  the flagged line numbers (`contain_exactly(5, 34, 37)`) rather than a bare count, which passes
+  even when the scanner flags the wrong lines; and a new rule needs both a numbered scenario spec
+  and its matching numbered fixture, so a unit-only spec is an incomplete change set. The
+  `describe`/`context` order mirrors the source file's method order, which makes a moved method
+  whose spec stayed put a finding even though the suite is green
+
+When the change set contains no Ruby, there is no coverage to assess. Check the claims the changed
+files make about the suite — commands, coverage floors, spec conventions — against `.simplecov`,
+`CLAUDE.md` and `spec/CLAUDE.md`, and otherwise return a clean outcome line. Do not manufacture
+findings about testing a non-Ruby file.
 
 ## Collation and Assembly
 
@@ -626,7 +671,7 @@ Use these categories as `##` sections, in this order, omitting any that are empt
 1. **Security** — untrusted-source handling, denial of service, filesystem safety, information
    exposure, supply chain
 1. **Design** — seams and layers, duplication, dead code, a fix applied to one scanner but not its
-   sibling, hidden contracts, rule catalog registration
+   sibling, hidden contracts, a rule missing its `config/locales/en.yml` entry
 1. **Tests** — missing, vacuous, brittle or misplaced examples; fixtures; spec hygiene; the 100%
    line and branch floors
 1. **Naming & Comments** — names, code comments, commit messages and the pull request description
