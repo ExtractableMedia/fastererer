@@ -49,6 +49,13 @@ bundle exec fastererer app/models
 bundle exec fastererer app/models/post.rb
 ```
 
+Write a starter configuration file, or ask what configuration is in effect:
+
+```shell
+bundle exec fastererer init
+bundle exec fastererer --show-config
+```
+
 Fastererer exits with status `1` when offenses are found and `2` when the path it was given does not
 exist, making it suitable for CI. See [Exit codes](#exit-codes).
 
@@ -164,6 +171,45 @@ exclude_paths:
 Globs resolve relative to the directory you run from. A file named directly on the command line is
 always scanned, even when `exclude_paths` matches it, so `fastererer vendor/foo.rb` inspects that
 file rather than reporting a clean scan.
+
+### Seeing your effective configuration
+
+`--show-config` prints every speedup with its state and where that state came from, so you can
+answer "is this on, and why?" without merging two files by eye. It is also the authoritative list
+of speedup keys.
+
+```text
+$ bundle exec fastererer --show-config
+Defaults:       /path/to/gems/fastererer-0.13.0/config/default.yml
+Project config: /path/to/app/.fastererer.yml
+New speedups:   warn (default)
+
+Speedups
+  block_vs_symbol_to_proc             enabled      default
+  each_with_index_vs_while            disabled     project
+  gsub_vs_tr                          held back    default
+  ...
+
+Exclude paths
+  vendor/**/*.rb                      default
+  db/schema.rb                        project
+```
+
+`held back` is deliberately distinct from `disabled`: a speedup that is off because you switched it
+off and one that is off because it is new are different situations with different fixes.
+
+### Writing a starter configuration
+
+`fastererer init` writes a `.fastererer.yml` with every setting present but commented out, so the
+file changes nothing until you uncomment something. It refuses to overwrite an existing file unless
+you pass `--force`.
+
+```shell
+bundle exec fastererer init
+```
+
+If you have a file or directory genuinely named `init`, write `./init` to scan it. `init` must be
+the first argument.
 
 ### When a new speedup ships
 
