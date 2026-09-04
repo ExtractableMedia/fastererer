@@ -76,6 +76,47 @@ underlying snake_case rule key (e.g. `select_first_vs_detect`), which is what
 you reference in `.fastererer.yml` under `speedups:` to disable a rule.
 Descriptions and documentation URLs live in `config/locales/en.yml`.
 
+## Output formats
+
+By default fastererer prints the human-readable text shown above. Pass `-f`/`--format` to emit
+machine-readable output for editors, log aggregators, or CI reporters instead:
+
+```shell
+fastererer --format=json      # single JSON document, includes a run summary
+fastererer --format=rdjsonl   # reviewdog JSON Lines, one record per offense
+fastererer --format=text      # the default
+```
+
+Machine formats write only their payload to stdout; diagnostics (parse errors, a missing path)
+go to stderr, so `fastererer --format=json > findings.json` captures clean JSON. An unrecognized
+format name is a usage error: the name is reported on stderr and fastererer exits `2` without
+scanning.
+
+`--format=json` produces one document with a `summary` of run counts and a flat `offenses` array
+(each offense carries `path`, `line`, `rule`, `rule_key`, `message`, and `url`). `rule` is the
+display name; `rule_key` is the identifier to write under `speedups:` in `.fastererer.yml`, so a
+consumer can offer to silence a rule without guessing at the name:
+
+```json
+{
+  "metadata": { "fastererer_version": "1.0.0" },
+  "summary": { "offense_count": 1, "inspected_file_count": 12, "unparsable_file_count": 0 },
+  "offenses": [
+    {
+      "path": "app/models/post.rb",
+      "line": 57,
+      "rule": "Performance/SelectFirstVsDetect",
+      "rule_key": "select_first_vs_detect",
+      "message": "Array#select.first is slower than Array#detect",
+      "url": "https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"
+    }
+  ]
+}
+```
+
+`--format=rdjsonl` follows the [reviewdog Diagnostic Format][rdf], one JSON object per line, ready
+to pipe straight into reviewdog (see [CI integration](#ci-integration)).
+
 ## Configuration
 
 Configuration lives in a `.fastererer.yml` file at the root of your project (or any ancestor
@@ -129,11 +170,31 @@ step:
 | ------ | ------- |
 | `0` | The scan completed and no offenses were found |
 | `1` | The scan completed and offenses were found |
-| `2` | Usage error — an unknown flag, or a path that does not exist, so nothing was scanned |
+| `2` | Usage error — an unknown flag or format, or a path that does not exist, so nothing was scanned |
 
 Status `2` is kept distinct from `1` so a wrapper script can tell "the tool ran and found problems"
-from "the path you gave me is not there". A renamed or mistyped directory fails the build instead
-of reporting a clean scan.
+from "you invoked me wrong". A renamed directory, a mistyped flag or an unknown `--format` value
+fails the build instead of reporting a clean scan.
+
+### Inline PR comments with reviewdog
+
+The `rdjsonl` format is consumed natively by [reviewdog](https://github.com/reviewdog/reviewdog),
+which can post findings as inline GitHub PR review comments:
+
+```shell
+bundle exec fastererer --format=rdjsonl \
+  | reviewdog -f=rdjsonl -name=fastererer -filter-mode=nofilter -reporter=github-pr-review
+```
+
+`-filter-mode=nofilter` reports every finding, not only those on lines the pull request touched,
+which is what reviewdog does by default. Findings outside the diff cannot be posted as inline
+review comments — GitHub's review API does not allow it — so reviewdog falls back to check
+annotations for those. `-name=fastererer` attributes the comments, since the rdjsonl record carries
+no tool name of its own. `-reporter=github-pr-review` needs `pull-requests: write`.
+
+Run fastererer from the repository root and let the path default to `.`. reviewdog matches findings
+against the pull request by repository-relative path, so passing an absolute directory emits
+absolute paths that will not match — and puts the runner's directory layout in a public comment.
 
 Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
 [no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output
@@ -186,5 +247,6 @@ for the idiom catalog that drives the speed checks.
 [fasterer]: https://github.com/DamirSvrtan/fasterer
 [issues]: https://github.com/ExtractableMedia/fastererer/issues
 [prism]: https://github.com/ruby/prism
+[rdf]: https://github.com/reviewdog/reviewdog/tree/master/proto/rdf
 [roadmap-project]: https://github.com/orgs/ExtractableMedia/projects/1
 [sferik-talk]: https://speakerdeck.com/sferik/writing-fast-ruby

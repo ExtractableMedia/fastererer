@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'json'
 
 describe Fastererer::CLI do
   include FileHelper
@@ -57,7 +58,7 @@ describe Fastererer::CLI do
       it 'scans the path it was given' do
         allow(Fastererer::FileTraverser).to receive(:new).and_call_original
         described_class.execute
-        expect(Fastererer::FileTraverser).to have_received(:new).with('nested')
+        expect(Fastererer::FileTraverser).to have_received(:new).with('nested', formatter: anything)
       end
     end
 
@@ -80,6 +81,47 @@ describe Fastererer::CLI do
         expect(Fastererer::Painter).not_to have_received(:disable!)
       end
     end
+
+    context 'with --format text named explicitly' do
+      let(:argv) { ['--format=text'] }
+      let(:out) { StringIO.new }
+
+      before do
+        Fastererer::Painter.disable!
+        create_file('user.rb', '[].shuffle.first')
+      end
+
+      after { Fastererer::Painter.enable! }
+
+      it 'renders the human-readable report', :aggregate_failures do
+        expect { described_class.execute(out: out) }.to raise_error(SystemExit)
+        expect(out.string).to include('user.rb:1: W: Performance/ShuffleFirstVsSample')
+      end
+    end
+
+    context 'with --format json' do
+      let(:argv) { ['--format', 'json'] }
+      let(:out) { StringIO.new }
+
+      before { create_file('user.rb', '[].shuffle.first') }
+
+      it 'writes the real scan to the injected stream', :aggregate_failures do
+        expect { described_class.execute(out: out) }.to raise_error(SystemExit)
+        expect(JSON.parse(out.string)['offenses'])
+          .to contain_exactly(hash_including('path' => 'user.rb', 'line' => 1,
+                                             'rule' => 'Performance/ShuffleFirstVsSample'))
+      end
+    end
+
+    context 'with an unknown format' do
+      let(:argv) { ['--format', 'bogus'] }
+      let(:err) { StringIO.new }
+
+      it 'names the format on the error stream and exits', :aggregate_failures do
+        expect { described_class.execute(err: err) }.to raise_error(SystemExit)
+        expect(err.string).to include('Unknown format')
+      end
+    end
   end
 
   describe '.parse_options' do
@@ -89,6 +131,10 @@ describe Fastererer::CLI do
 
     it 'leaves the path nil when only flags are given' do
       expect(described_class.parse_options(['--no-color'])[:path]).to be_nil
+    end
+
+    it 'records --format' do
+      expect(described_class.parse_options(['--format', 'json'])).to include(format: 'json')
     end
 
     it 'records --no-color' do

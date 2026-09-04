@@ -3,6 +3,8 @@
 require 'spec_helper'
 
 describe Fastererer::Formatters::TextFormatter do
+  include FormatterHelpers
+
   subject(:formatter) { described_class.new(out: out, err: err) }
 
   let(:out) { StringIO.new }
@@ -70,17 +72,5 @@ describe Fastererer::Formatters::TextFormatter do
         expect(out.string).to eq("1 file inspected, 0 offenses detected, 1 unparsable file found\n")
       end
     end
-  end
-
-  private
-
-  def finding(path:, line:, rule_name:, description:, url: 'https://e.test')
-    Fastererer::Finding.new(path: path, line: line, rule_name: rule_name,
-                            description: description, url: url)
-  end
-
-  def report(findings: [], inspected: 0, unparsable: [], missing: nil)
-    Fastererer::Report.new(findings: findings, files_inspected_count: inspected,
-                           unparsable_files: unparsable, missing_path: missing)
   end
 end
