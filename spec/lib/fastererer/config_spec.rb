@@ -2,40 +2,92 @@
 
 require 'spec_helper'
 require 'pathname'
-require 'tmpdir'
 
 describe Fastererer::Config do
+  include FileHelper
+
   let(:root) { Pathname.new("#{File.dirname(__FILE__)}/../../..").cleanpath }
   let(:expected_location) { "#{root}/.fastererer.yml" }
 
   describe '#ignored_speedups' do
-    include FileHelper
-
     include_context 'isolated environment'
 
-    it 'returns the speedups the config switches off' do
-      create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: false'])
-      expect(described_class.new.ignored_speedups).to eq([:gsub_vs_tr])
+    context 'with a speedup the project file switches off' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: false']) }
+
+      it 'ignores it' do
+        expect(described_class.new.ignored_speedups).to contain_exactly(:gsub_vs_tr)
+      end
     end
 
-    it 'omits the speedups the config leaves on' do
-      create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: true'])
-      expect(described_class.new.ignored_speedups).to be_empty
+    context 'with a speedup the project file leaves on' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: true']) }
+
+      it 'does not ignore it' do
+        expect(described_class.new.ignored_speedups).not_to include(:gsub_vs_tr)
+      end
     end
 
-    it 'ignores nothing when there is no config file' do
-      expect(described_class.new.ignored_speedups).to be_empty
+    context 'with a speedup the project file does not mention' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  sort_vs_sort_by: false']) }
+
+      it 'keeps the shipped default, leaving it enabled' do
+        expect(described_class.new.ignored_speedups).not_to include(:gsub_vs_tr)
+      end
+    end
+
+    context 'with a speedup key carrying no value' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr:']) }
+
+      it 'inherits the shipped default rather than reading the nil as off' do
+        expect(described_class.new.ignored_speedups).not_to include(:gsub_vs_tr)
+      end
+    end
+
+    context 'with a non-boolean speedup value' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: yes please']) }
+
+      it 'leaves it enabled, because only false switches a speedup off' do
+        expect(described_class.new.ignored_speedups).not_to include(:gsub_vs_tr)
+      end
+    end
+
+    context 'with no project config file' do
+      it 'ignores nothing' do
+        expect(described_class.new.ignored_speedups).to be_empty
+      end
+    end
+  end
+
+  describe '#ignored_files' do
+    include_context 'isolated environment'
+
+    before { create_file('vendor/gem.rb') }
+
+    context 'with no project config file' do
+      it 'globs the shipped default excludes' do
+        expect(described_class.new.ignored_files).to contain_exactly('vendor/gem.rb')
+      end
+    end
+
+    context 'with project exclude paths' do
+      before do
+        create_file(described_class::FILE_NAME, ['exclude_paths:', "  - 'app/*.rb'"])
+        create_file('app/user.rb')
+      end
+
+      it 'globs the project paths alongside the defaults' do
+        expect(described_class.new.ignored_files).to contain_exactly('vendor/gem.rb', 'app/user.rb')
+      end
     end
   end
 
   describe '#file' do
-    let(:nil_file) { { 'speedups' => {}, 'exclude_paths' => [] } }
+    include_context 'isolated environment'
 
-    context 'without an ancestor file' do
-      around { |example| Dir.mktmpdir { |dir| Dir.chdir(dir) { example.run } } }
-
-      it 'returns the nil_file fallback' do
-        expect(described_class.new.file).to eq(nil_file)
+    context 'with no project config file' do
+      it 'returns the shipped defaults verbatim' do
+        expect(described_class.new.file).to eq(Fastererer::DefaultConfig.load)
       end
 
       it 'memoizes the result across calls' do
@@ -44,11 +96,54 @@ describe Fastererer::Config do
       end
     end
 
-    it 'calls YAML.load_file at most once when a config exists' do
-      config = described_class.new
-      allow(YAML).to receive(:load_file).and_call_original
-      2.times { config.file }
-      expect(YAML).to have_received(:load_file).once
+    context 'with a blank project config file' do
+      before { create_file(described_class::FILE_NAME, '') }
+
+      it 'falls back to the shipped defaults' do
+        expect(described_class.new.file).to eq(Fastererer::DefaultConfig.load)
+      end
+    end
+
+    context 'with a speedups key carrying no value' do
+      before { create_file(described_class::FILE_NAME, ['speedups:']) }
+
+      it 'keeps every shipped speedup' do
+        expect(described_class.new.file[described_class::SPEEDUPS_KEY]).to eq(default_speedups)
+      end
+    end
+
+    context 'with an exclude_paths key carrying no value' do
+      before { create_file(described_class::FILE_NAME, ['exclude_paths:']) }
+
+      it 'keeps the shipped excludes' do
+        expect(described_class.new.file[described_class::EXCLUDE_PATHS_KEY]).to eq(default_excludes)
+      end
+    end
+
+    context 'with a speedup the project file overrides' do
+      before { create_file(described_class::FILE_NAME, ['speedups:', '  gsub_vs_tr: false']) }
+
+      it 'lets the project value win' do
+        speedups = described_class.new.file[described_class::SPEEDUPS_KEY]
+        expect(speedups).to eq(default_speedups.merge('gsub_vs_tr' => false))
+      end
+    end
+
+    context 'with project exclude paths' do
+      before { create_file(described_class::FILE_NAME, ['exclude_paths:', "  - 'app/*.rb'"]) }
+
+      it 'unions them with the shipped excludes rather than replacing them' do
+        excludes = described_class.new.file[described_class::EXCLUDE_PATHS_KEY]
+        expect(excludes).to eq(default_excludes + ['app/*.rb'])
+      end
+    end
+
+    context 'with a new_speedups mode in the project file' do
+      before { create_file(described_class::FILE_NAME, ['new_speedups: enable']) }
+
+      it 'lets the project value win' do
+        expect(described_class.new.file['new_speedups']).to eq('enable')
+      end
     end
   end
 
@@ -68,5 +163,21 @@ describe Fastererer::Config do
         Dir.chdir(dir) { expect(described_class.new.file_location).to be_nil }
       end
     end
+  end
+
+  describe '#default_config' do
+    it 'is deep frozen, so a merged copy cannot mutate it' do
+      expect(described_class.new.default_config[described_class::SPEEDUPS_KEY]).to be_frozen
+    end
+  end
+
+  private
+
+  def default_speedups
+    Fastererer::DefaultConfig.load[described_class::SPEEDUPS_KEY]
+  end
+
+  def default_excludes
+    Fastererer::DefaultConfig.load[described_class::EXCLUDE_PATHS_KEY]
   end
 end

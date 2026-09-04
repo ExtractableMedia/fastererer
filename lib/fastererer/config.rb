@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
-require 'yaml'
 require 'pathname'
+
+require_relative 'config_loader'
+require_relative 'default_config'
 
 module Fastererer
   class Config
     FILE_NAME         = '.fastererer.yml'
-    SPEEDUPS_KEY      = 'speedups'
-    EXCLUDE_PATHS_KEY = 'exclude_paths'
+    SPEEDUPS_KEY      = ConfigLoader::SPEEDUPS_KEY
+    EXCLUDE_PATHS_KEY = ConfigLoader::EXCLUDE_PATHS_KEY
 
     def ignored_speedups
       @ignored_speedups ||=
@@ -20,9 +22,9 @@ module Fastererer
     end
 
     def file
-      return @file if defined?(@file)
-
-      @file = load_file
+      @file ||= default_config.merge(project_config) do |key, default_value, project_value|
+        merge_value(key, default_value, project_value)
+      end
     end
 
     def file_location
@@ -33,18 +35,24 @@ module Fastererer
         .find { |f| File.exist?(f) }
     end
 
-    def nil_file
-      { SPEEDUPS_KEY => {}, EXCLUDE_PATHS_KEY => [] }
+    def default_config
+      @default_config ||= DefaultConfig.load
     end
 
     private
 
-    def load_file
-      return nil_file if file_location.nil?
+    def project_config
+      return {} if file_location.nil?
 
-      # YAML.load_file returns false if the content is blank, so coerce to nil_file.
-      loaded = YAML.load_file(file_location) || nil_file
-      loaded.merge!(nil_file) { |_k, v1, v2| v1 || v2 }
+      ConfigLoader.load(file_location)
+    end
+
+    def merge_value(key, default_value, project_value)
+      case key
+      when SPEEDUPS_KEY      then default_value.merge(project_value)
+      when EXCLUDE_PATHS_KEY then default_value | project_value
+      else project_value
+      end
     end
   end
 end
