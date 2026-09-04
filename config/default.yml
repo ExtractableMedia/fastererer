@@ -1,6 +1,6 @@
 # Defaults shipped with fastererer. A project's .fastererer.yml layers over this file: keys it
 # sets win, keys it omits keep the values below, and its exclude_paths are added to these rather
-# than replacing them.
+# than replacing them. Run `fastererer --show-config` to see the merged result.
 
 speedups:
   block_vs_symbol_to_proc: true

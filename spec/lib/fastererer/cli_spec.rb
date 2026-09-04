@@ -186,6 +186,90 @@ describe Fastererer::CLI do
       end
     end
 
+    context 'with the init subcommand' do
+      let(:argv) { ['init'] }
+
+      it 'writes the starter config' do
+        described_class.execute(out: StringIO.new, err: StringIO.new)
+        expect(File).to exist(config_name)
+      end
+    end
+
+    context 'with the init subcommand over an existing config' do
+      let(:argv) { ['init'] }
+      let(:err) { StringIO.new }
+
+      before { create_file(config_name, 'speedups:') }
+
+      it 'refuses and exits with the usage status', :aggregate_failures do
+        expect { described_class.execute(out: StringIO.new, err: err) }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
+        expect(err.string).to include('already exists')
+      end
+    end
+
+    context 'with the init subcommand and --force' do
+      let(:argv) { %w[init --force] }
+
+      before { create_file(config_name, 'speedups:') }
+
+      it 'overwrites without aborting' do
+        expect { described_class.execute(out: StringIO.new, err: StringIO.new) }
+          .not_to raise_error
+      end
+    end
+
+    context 'with an unknown flag after init' do
+      let(:argv) { %w[init --nope] }
+      let(:err) { StringIO.new }
+
+      it 'exits with the usage status', :aggregate_failures do
+        expect { described_class.execute(out: StringIO.new, err: err) }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
+      end
+    end
+
+    context 'with init somewhere other than first' do
+      let(:argv) { %w[--no-color init] }
+      let(:err) { StringIO.new }
+
+      it 'says where it belongs and points at the escape hatch', :aggregate_failures do
+        expect { described_class.execute(out: StringIO.new, err: err) }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
+        expect(err.string).to include('must be the first argument').and include('./init')
+      end
+    end
+
+    context 'with --help after init' do
+      let(:argv) { %w[init --help] }
+
+      it 'prints the init usage rather than the scan usage' do
+        expect { described_class.execute(out: StringIO.new, err: StringIO.new) }
+          .to output(/Usage: fastererer init/).to_stdout.and raise_error(SystemExit)
+      end
+    end
+
+    context 'with a path literally named init' do
+      let(:argv) { ['./init'] }
+
+      before { create_file('init/user.rb', '[].shuffle.first') }
+
+      it 'scans it rather than installing a config', :aggregate_failures do
+        expect { described_class.execute(out: StringIO.new, err: StringIO.new) }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(1) }
+      end
+    end
+
+    context 'with --show-config' do
+      let(:argv) { ['--show-config'] }
+      let(:out) { StringIO.new }
+
+      it 'prints the effective configuration without scanning' do
+        described_class.execute(out:, err: StringIO.new)
+        expect(out.string).to include('Speedups').and include('Exclude paths')
+      end
+    end
+
     context 'with an unreadable configuration' do
       let(:err) { StringIO.new }
 

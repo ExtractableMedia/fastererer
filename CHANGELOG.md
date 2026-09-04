@@ -15,6 +15,12 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
   all: every speedup is enabled and `tmp/**/*.rb`, `vendor/**/*.rb` and `node_modules/**/*.rb` are
   skipped. `.fastererer.yml` now holds only your overrides — you no longer restate the whole list
   of speedups in order to change one of them.
+- [#35]: A `fastererer init` subcommand that writes a starter `.fastererer.yml`. Every setting in
+  it is commented out bar one, so the file changes nothing until you uncomment something. It
+  refuses to overwrite an existing file, exiting `2`, unless `--force` is passed.
+- [#35]: A `--show-config` flag that prints every speedup with its state and whether that state
+  came from the shipped defaults or your own file, followed by the exclude paths the same way, so
+  you can answer "is this on, and why?" without merging two files by eye.
 - [#35]: A `new_speedups` setting, one of `enable`, `warn` or `disable`, governing speedups added
   in future releases. A newly added speedup is held back by default: it is named once on stderr
   and reports no offenses, so upgrading fastererer cannot turn a green build red on its own.
