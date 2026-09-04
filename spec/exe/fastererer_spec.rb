@@ -39,11 +39,13 @@ describe 'Fastererer CLI' do
     before { create_file('bad.rb', '[]*/sa*()') }
 
     it 'keeps parse-error diagnostics off stdout' do
-      expect(`#{fasterer_bin} 2>/dev/null`).not_to include('Unprocessable files were')
+      output = `#{fasterer_bin} 2>/dev/null`
+      expect(output).not_to include('Unprocessable files were')
     end
 
     it 'keeps the statistics line on stdout' do
-      expect(`#{fasterer_bin} 2>/dev/null`).to include('1 unparsable file found')
+      output = `#{fasterer_bin} 2>/dev/null`
+      expect(output).to include('1 unparsable file found')
     end
   end
 
