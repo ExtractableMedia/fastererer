@@ -11,10 +11,10 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 
 ### Added
 
-- [#35]: Fastererer now ships its own defaults at `config/default.yml`. A project with no
-  `.fastererer.yml` gets every speedup enabled and skips `tmp/**/*.rb`, `vendor/**/*.rb` and
-  `node_modules/**/*.rb`. `.fastererer.yml` now holds only your overrides — you no longer restate
-  the whole list of speedups in order to change one of them.
+- [#35]: Fastererer now ships its own defaults, so it does useful work with no configuration at
+  all: every speedup is enabled and `tmp/**/*.rb`, `vendor/**/*.rb` and `node_modules/**/*.rb` are
+  skipped. `.fastererer.yml` now holds only your overrides — you no longer restate the whole list
+  of speedups in order to change one of them.
 - [#35]: A `new_speedups` setting, one of `enable`, `warn` or `disable`, governing speedups added
   in future releases. A newly added speedup is held back by default: it is named once on stderr
   and reports no offenses, so upgrading fastererer cannot turn a green build red on its own.
@@ -32,12 +32,6 @@ prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by Extra
 - [#35]: A `.fastererer.yml` that cannot be read now reports one line on stderr and exits `2`
   before scanning anything. It previously printed a full scan, then a Ruby backtrace, and exited
   `1` — the status that means offenses were found.
-
-### Removed
-
-- [#35]: `Config#nil_file`. `Config#default_config` returns the shipped defaults in its place; the
-  empty `speedups`/`exclude_paths` fallback it used to return no longer exists. `FileTraverser`
-  loses `#config_file` along with two unused constant aliases.
 
 ### Fixed
 
