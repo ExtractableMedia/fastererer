@@ -582,50 +582,59 @@ numbers to unrelated issues/PRs.
 Example:
 
 ```markdown
-### F1 🟡 Medium Priority - Config path is not validated before globbing
+### F1 🔴 Critical - The reported offense line is off by one
 
-**File:** `lib/fastererer/config.rb` (line 45)
-**Reviewer:** security-reviewer
-**Concurred by:** ruby-expert
-**Recommendation:** Implement — an unvalidated path reaches `Dir.glob`; low cost.
-...
-
-### F2 🟢 Low Priority - Consider extracting method
-
-**File:** `lib/fastererer/analyzer.rb` (line 120)
-**Reviewer:** code-best-practices-reviewer
-**Recommendation:** Skip — only two call sites; extracting adds indirection for
-no real DRY win.
-...
-
-### F3 ℹ️ Observation - The `super` in `visit_call_node` is load-bearing
-
-**File:** `lib/fastererer/parser.rb` (line 30)
+**File:** `lib/fastererer/scanners/offensive.rb` (line 18)
 **Reviewer:** ruby-expert
-`Prism::Visitor` recurses into child nodes only when the override calls `super`,
-which is the only reason a call nested inside a block is scanned at all. Worth
-knowing before anyone adds an early return to this method.
-...
-
-### F4 💡 Observation (optional action) - `reject` would read clearer than the nil-map
-
-**File:** `lib/fastererer/offense_collector.rb`
-**Reviewer:** code-best-practices-reviewer
-Filtering the node before mapping would be more intention-revealing than mapping
-to `nil` and relying on a downstream guard. Correct as-is; optional.
+**Concurred by:** code-best-practices-reviewer
+**Recommendation:** Implement — every offense this scanner reports cites the
+wrong line; one edit at the point the offense is constructed.
 ...
 
 ### F5 ⚖️ Decision - An unparsable file counts as an offense or as a skip
 
-**File:** `lib/fastererer/file_traverser.rb` (line 54)
+**File:** `lib/fastererer/file_traverser.rb` (line 67)
 **Reviewer:** ruby-expert
 **Options:** Report the parse failure as an offense (a syntax error in a target
 file is a real problem and CI should fail; but a file using syntax newer than the
-running Ruby then fails the whole run) — or skip it with a warning, as the
-sibling code paths do (the run stays green; a genuinely broken file goes by
-unnoticed).
+running Ruby then fails the whole run) — or keep today's behavior, where the
+single rescue accumulates the failure and the formatter lists it on stderr (the
+run stays green, because an unparsable file yields no finding; a genuinely broken
+file goes by unnoticed).
+...
+
+### F6 🟢 Low Priority - Cache the rendered explanation
+
+**File:** `lib/fastererer/explanation.rb`
+**Reviewer:** code-best-practices-reviewer
+**Recommendation:** Skip — rendering happens once per offense at output time, and
+there is no measured bottleneck to point at.
+...
+
+### F10 ℹ️ Observation - The `super` in `visit_call_node` is load-bearing
+
+**File:** `lib/fastererer/analyzer.rb` (line 41)
+**Reviewer:** ruby-expert
+`Prism::Visitor` descends into child nodes only when the override calls `super`,
+which is the only reason a call nested inside a block is scanned at all. Worth
+knowing before anyone adds an early return here — and note `ProcCallVisitor`
+omits `super` deliberately, so the two are not interchangeable.
+...
+
+### F11 💡 Observation (optional action) - The deliberate `nil` deserves a comment
+
+**File:** `lib/fastererer/method_call.rb` (line 86)
+**Reviewer:** code-best-practices-reviewer
+Mapping a `MultiTargetNode` to `nil` reads like an oversight, and the obvious
+tidy-up — filtering with `reject` — would change behavior, because the `nil` has
+to keep counting toward the arity check downstream. A one-line comment would stop
+the next reader making that edit. Correct as-is; optional.
 ...
 ```
+
+The example numbers are not contiguous because these five findings are drawn from the same worked
+review the Consolidated Summary, Pre-Merge Checklist and Interactive Finding Selection examples use
+— F1 through F12 throughout, one finding per number. Cross-reading those sections is meant to work.
 
 Every finding carries a **Reviewer** line naming the agent that raised it, so the Review History
 table can be consulted for the model behind it. Every actionable finding other than a ⚖️ Decision
@@ -714,12 +723,12 @@ Example table format:
 ```markdown
 | Finding | Priority | Category | Description | File | Recommendation | Group | Status |
 |---------|----------|----------|-------------|------|----------------|-------|--------|
-| F1 | 🔴 Critical | Correctness | Offense line off by one | `parser.rb` | Implement | G2 | ❓ |
-| F2 | 🟢 Low | Performance | Memoize the repeated read | `file_traverser.rb` | Implement | G2 | ✅ |
+| F1 | 🔴 Critical | Correctness | Offense line off by one | `offensive.rb` | Implement | G2 | ❓ |
+| F2 | 🟢 Low | Performance | Memoize the repeated glob | `file_traverser.rb` | Implement | G2 | ✅ |
 | F5 | ⚖️ Decision | Design | Unparsable file policy | `file_traverser.rb` | Options | G1 | ❓ |
 | F6 | 🟢 Low | Performance | Cache the rendered explanation | `explanation.rb` | Skip | — | ❓ |
-| F9 | 🟡 Medium | Interface | Warning copy for a skipped file | `cli.rb` | Implement / Defer | G1 | ❓ |
-| F10 | ℹ️ Observation | Design | Visitor `super` is load-bearing | `parser.rb` | — | — | — |
+| F9 | 🟡 Medium | Interface | Warning copy for a skipped file | `text_formatter.rb` | Implement / Defer | G1 | ❓ |
+| F10 | ℹ️ Observation | Design | Visitor `super` is load-bearing | `analyzer.rb` | — | — | — |
 ```
 
 This allows developers to quickly see all action items and reference specific findings by number in
@@ -820,7 +829,7 @@ Decide first: F7 and F9 both change shape depending on the ruling.
 Highest severity outside G1; one spec file, one production line.
 
 - [ ] ❓ F1 - Fix the off-by-one in the reported line number
-- [x] ✅ F2 - Memoize the repeated file read (fixed)
+- [x] ✅ F2 - Memoize the repeated glob (fixed)
 
 ### G3 ✅ — Tidy the analyzer spec
 
@@ -892,9 +901,9 @@ Apply strikethrough to the finding heading (excluding the finding number) and ad
 to the right. Do **not** delete the finding content — preserve it for reference.
 
 ```markdown
-### F1 ~~🟡 Medium Priority - Config path is not validated before globbing~~ ✅ Fixed
+### F2 ~~🟢 Low Priority - Memoize the repeated glob~~ ✅ Fixed
 
-**File:** `lib/fastererer/config.rb` (line 45)
+**File:** `lib/fastererer/file_traverser.rb` (line 50)
 **Status:** Fixed in commit `abc123`
 ...original finding content preserved...
 ```
@@ -902,7 +911,7 @@ to the right. Do **not** delete the finding content — preserve it for referenc
 In the pre-merge checklist, **check the box, swap ❓ for ✅** and include a brief explanation:
 
 ```markdown
-- [x] ✅ F1 - Validate the config path (fixed)
+- [x] ✅ F2 - Memoize the repeated glob (fixed)
 ```
 
 The ✅ goes immediately after the checkbox, replacing the ❓ the item carried while open. Do not also
@@ -916,17 +925,17 @@ the finding number) and add the appropriate status icon to the right. Do **not**
 content — preserve it for reference.
 
 ```markdown
-### F2 ~~🟢 Low Priority - Consider extracting method~~ 🚫
+### F4 ~~🟢 Low Priority - Extract the assertion helper~~ 🚫
 
-**File:** `lib/fastererer/analyzer.rb` (line 120)
+**File:** `spec/lib/fastererer/file_traverser_spec.rb`
 **Status:** Ignored — complexity not warranted for a single call site
 ...original finding content preserved...
 ```
 
 ```markdown
-### F3 ~~🟡 Medium Priority - Memoize the parsed AST~~ ⏸️
+### F3 ~~🟡 Medium Priority - Fold the shared setup into a `let`~~ ⏸️
 
-**File:** `lib/fastererer/parser.rb` (line 88)
+**File:** `spec/lib/fastererer/file_traverser_spec.rb`
 **Status:** Deferred to follow-up PR
 ...original finding content preserved...
 ```
@@ -936,28 +945,28 @@ In the pre-merge checklist, **check the box and swap ❓ for the status glyph** 
 checkbox says which:
 
 ```markdown
-- [x] 🚫 F2 - Extract method (ignored — single call site)
-- [x] ⏸️ F3 - Memoize the parsed AST (deferred to follow-up PR)
+- [x] 🚫 F4 - Extract the assertion helper (ignored — single call site)
+- [x] ⏸️ F3 - Fold the shared setup into a `let` (deferred to follow-up PR)
 ```
 
 In the consolidated summary table, the Status column sits after Recommendation and records what was
 decided, so it only moves off ❓ as decisions land. Recommendation and Status agree once a decision
 is made (Implement → ✅, Defer → ⏸️, Skip → 🚫), but that is the *outcome* of the user agreeing with
-the reviewer — it is never a mapping to apply in advance. F2 below shows the shape of a finding
+the reviewer — it is never a mapping to apply in advance. F6 below shows the shape of a finding
 whose Skip recommendation has not yet been accepted:
 
 ```markdown
 | Finding | Priority | Category | Description | File | Recommendation | Group | Status |
 |---------|----------|----------|-------------|------|----------------|-------|--------|
-| F1 | 🟡 Medium | Security | Unvalidated config path | `config.rb` | Implement | G1 | ✅ |
-| F2 | 🟢 Low | Design | Extract method | `analyzer.rb` | Skip | — | ❓ |
-| F3 | 🟡 Medium | Performance | Memoize the parsed AST | `parser.rb` | Defer | — | ⏸️ |
-| F4 | 🟢 Low | Performance | Cache the explanation | `explanation.rb` | Skip | — | 🚫 |
-| F5 | ℹ️ Observation | Design | Visitor `super` is load-bearing | `parser.rb` | — | — | — |
+| F1 | 🔴 Critical | Correctness | Offense line off by one | `offensive.rb` | Implement | G2 | ✅ |
+| F6 | 🟢 Low | Performance | Cache the rendered explanation | `explanation.rb` | Skip | — | ❓ |
+| F8 | 🟢 Low | Design | Extract the explanation helper | `explanation.rb` | Defer | — | ⏸️ |
+| F12 | 🟢 Low | Naming & Comments | Rename `err` to `error_stream` | `text_formatter.rb` | Skip | — | 🚫 |
+| F10 | ℹ️ Observation | Design | Visitor `super` is load-bearing | `analyzer.rb` | — | — | — |
 ```
 
-F2 and F4 both carry a **Skip** recommendation; only F4 has been confirmed. The pair is the point: a
-recommendation does not determine a status, so the same advice can sit at two different statuses
+F6 and F12 both carry a **Skip** recommendation; only F12 has been confirmed. The pair is the point:
+a recommendation does not determine a status, so the same advice can sit at two different statuses
 depending on whether the user has ruled on it. Keep both rows if this example is ever rewritten.
 
 ### File Output
@@ -1071,10 +1080,10 @@ F5 ⚖️ Decision - Unparsable file as offense or skip (report it / warn and sk
 
 G1 — Decide the unparsable-file policy
 F7 🟡 Medium - Assert the offense or the skip (file_traverser_spec.rb)
-F9 🟡 Medium - Warning copy for a skipped file (cli.rb)
+F9 🟡 Medium - Warning copy for a skipped file (text_formatter.rb)
 
 G2 — Pin the reported offense location
-F1 🔴 Critical - Off-by-one in the reported line number (parser.rb)
+F1 🔴 Critical - Off-by-one in the reported line number (offensive.rb)
 
 Not recommended for this change set
 F6 🟢 Low - Cache the rendered explanation (explanation.rb)
