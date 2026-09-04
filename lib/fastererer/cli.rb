@@ -7,12 +7,23 @@ require_relative 'version'
 
 module Fastererer
   class CLI
+    OFFENSES_FOUND_STATUS = 1
+    USAGE_ERROR_STATUS = 2
+
     def self.execute
       options = parse_options(ARGV.dup)
       Painter.disable! if options[:no_color]
       file_traverser = Fastererer::FileTraverser.new(options[:path])
       file_traverser.traverse
-      abort if file_traverser.offenses_found?
+      exit_with_status_for(file_traverser)
+    rescue OptionParser::ParseError => e
+      warn e.message
+      exit USAGE_ERROR_STATUS
+    end
+
+    def self.exit_with_status_for(file_traverser)
+      exit USAGE_ERROR_STATUS if file_traverser.path_missing?
+      exit OFFENSES_FOUND_STATUS if file_traverser.offenses_found?
     end
 
     def self.parse_options(argv)

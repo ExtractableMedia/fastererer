@@ -33,19 +33,31 @@ describe 'Fastererer CLI' do
         expect($CHILD_STATUS.exitstatus).to eq(1)
       end
     end
+
+    context 'when the given path does not exist' do
+      it 'exits 2' do
+        `#{fasterer_bin} no_such_path 2>/dev/null`
+        expect($CHILD_STATUS.exitstatus).to eq(2)
+      end
+    end
+
+    context 'when given an unknown flag' do
+      it 'exits 2' do
+        `#{fasterer_bin} --nope 2>/dev/null`
+        expect($CHILD_STATUS.exitstatus).to eq(2)
+      end
+    end
   end
 
   describe 'stream routing' do
     before { create_file('bad.rb', '[]*/sa*()') }
 
     it 'keeps parse-error diagnostics off stdout' do
-      output = `#{fasterer_bin} 2>/dev/null`
-      expect(output).not_to include('Unprocessable files were')
+      expect(`#{fasterer_bin} 2>/dev/null`).not_to include('Unprocessable files were')
     end
 
     it 'keeps the statistics line on stdout' do
-      output = `#{fasterer_bin} 2>/dev/null`
-      expect(output).to include('1 unparsable file found')
+      expect(`#{fasterer_bin} 2>/dev/null`).to include('1 unparsable file found')
     end
   end
 

@@ -49,7 +49,8 @@ bundle exec fastererer app/models
 bundle exec fastererer app/models/post.rb
 ```
 
-Fastererer exits with status `1` when offenses are found, making it suitable for CI.
+Fastererer exits with status `1` when offenses are found and `2` when the path it was given does not
+exist, making it suitable for CI. See [Exit codes](#exit-codes).
 
 ## Example output
 
@@ -121,6 +122,18 @@ step:
 - name: Run fastererer
   run: bundle exec fastererer
 ```
+
+### Exit codes
+
+| Status | Meaning |
+| ------ | ------- |
+| `0` | The scan completed and no offenses were found |
+| `1` | The scan completed and offenses were found |
+| `2` | Usage error — an unknown flag, or a path that does not exist, so nothing was scanned |
+
+Status `2` is kept distinct from `1` so a wrapper script can tell "the tool ran and found problems"
+from "the path you gave me is not there". A renamed or mistyped directory fails the build instead
+of reporting a clean scan.
 
 Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (see
 [no-color.org](https://no-color.org/)), or when `--no-color` is passed — so CI logs, piped output
