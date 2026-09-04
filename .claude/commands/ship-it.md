@@ -1,6 +1,6 @@
 # Ship It
 
-Move `fastererer` toward its next release: reconcile the CHANGELOG against what has merged, and —
+Move `fastererer` toward its next release: reconcile the changelog against what has merged, and —
 when you're ready — bump the version, promote `[Unreleased]` into a dated section, tag the merged
 commit, publish the gem to RubyGems and create the matching GitHub Release.
 
@@ -9,7 +9,7 @@ commit, publish the gem to RubyGems and create the matching GitHub Release.
 `$ARGUMENTS` selects the mode. The two halves exist so that merging work doesn't have to mean
 releasing it:
 
-- **`prepare`** — reconcile the CHANGELOG's `[Unreleased]` section against PRs merged since the last
+- **`prepare`** — reconcile the changelog's `[Unreleased]` section against PRs merged since the last
   tag and push any additions through a PR, then stop. No version bump, no tag, no publish. Run it as
   often as you like between releases and `[Unreleased]` accumulates.
 - **`publish`** — reconcile as above, then cut the release: bump the version and `Gemfile.lock`,
@@ -25,7 +25,7 @@ not run it "harmlessly".
 
 ## Overview
 
-1. Reconcile the CHANGELOG against PRs merged since the last tag *(all modes)*
+1. Reconcile the changelog against PRs merged since the last tag *(all modes)*
 1. Determine the new version number, defaulting from the now-complete `[Unreleased]` section
    *(publish)*
 1. Bump `lib/fastererer/version.rb` and `Gemfile.lock`, and promote `[Unreleased]` into a new dated
@@ -35,8 +35,8 @@ not run it "harmlessly".
 1. Sync local `main` with `origin/main` *(publish)*
 1. Tag the merged commit, push it, and watch the gated release workflow publish the gem to RubyGems
    once a human approves the deployment *(publish)*
-1. Create the GitHub Release from the new CHANGELOG section and confirm the posted body carries the
-   expected CHANGELOG sections *(publish)*
+1. Create the GitHub Release from the new changelog section and confirm the posted body carries the
+   expected changelog sections *(publish)*
 
 [Keep a Changelog 1.1.0]: https://keepachangelog.com/en/1.1.0/
 
@@ -83,7 +83,7 @@ the repository root, so run from there:
    git fetch --tags origin
    ```
 
-### Step 1: Reconcile the CHANGELOG against merged PRs
+### Step 1: Reconcile the changelog against merged PRs
 
 *Runs in: all modes.* Reconciling before anything else is what makes Step 2's suggested bump
 trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a complete section.
@@ -112,8 +112,11 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
 
 1. **If nothing needed adding, decide whether there is anything left to do:**
 
-   - In `prepare` mode, stop here and report that the CHANGELOG already records every merged PR.
-     There is no commit to make, so do not create a branch or open a PR
+   - In `prepare` mode, stop here. There is no commit to make, so do not create a branch or open
+     a PR. Say which of the two reasons applies: every merged PR already has an entry, or nothing
+     that merged warrants one. A window of only tooling, CI, dependency and documentation work
+     reaches this point with `[Unreleased]` still empty and nothing recorded, so reporting it as
+     "already recorded" would be false
    - In `publish` mode, continue to Step 2 — the release itself is still ahead
 
 ### Step 2: Determine the new version
@@ -127,7 +130,7 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
    ```
 
 1. **Inspect the reconciled `[Unreleased]` section** of `CHANGELOG.md` to suggest the appropriate
-   bump. The gem is past 1.0.0 and the CHANGELOG claims Semantic Versioning, so a breaking change is
+   bump. The gem is past 1.0.0 and the changelog claims Semantic Versioning, so a breaking change is
    a major bump rather than a minor one:
 
    - `### Removed` entries, or a `### Changed` entry describing a breaking change → suggest a
@@ -163,7 +166,7 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
    not on origin, it is most likely a leftover from an aborted run: confirm with the user, then
    `git tag -d "v$NEW_VERSION"` and continue.
 
-### Step 3: Bump the version and promote the CHANGELOG
+### Step 3: Bump the version and promote the changelog
 
 *Runs in: `publish`. Skip entirely in `prepare`.*
 
@@ -203,7 +206,7 @@ identical.
    # publish, and the no-argument run
    BRANCH="release-v$NEW_VERSION"; TITLE="Prepare v$NEW_VERSION release"
    # prepare
-   BRANCH="changelog-catch-up";    TITLE="Record merged PRs in the CHANGELOG"
+   BRANCH="changelog-catch-up";    TITLE="Record merged PRs in the changelog"
    ```
 
 1. **Sync `main` and create the branch from it.** The Preflight step confirmed `main` is checked
@@ -245,7 +248,7 @@ identical.
    ```
 
    Build `/tmp/ship-it-pr-body.md` with a `## Summary` section and a `## Test plan` section. In
-   `publish` mode, add a `## Release notes preview` section that pastes the new CHANGELOG section.
+   `publish` mode, add a `## Release notes preview` section that pastes the new changelog section.
 
 1. **Watch CI checks:**
 
@@ -411,7 +414,7 @@ reset; the user may have intentional local state.
    ```
 
    Deriving `PREV` from ancestry matches how Step 1 finds the last tag, and agrees with the compare
-   link Step 3 wrote into the CHANGELOG. Sorting all tags by version instead would pick the wrong
+   link Step 3 wrote into the changelog. Sorting all tags by version instead would pick the wrong
    one whenever a tag sorts above the release being cut — a pre-release, or a leftover from an
    aborted run.
 
@@ -433,7 +436,7 @@ reset; the user may have intentional local state.
    then
      echo "Release body contains Keep a Changelog sections"
    else
-     echo "Release body is missing its CHANGELOG sections — inspect before announcing"
+     echo "Release body is missing its changelog sections — inspect before announcing"
    fi
    ```
 
@@ -454,7 +457,7 @@ reset; the user may have intentional local state.
 
 Use `AskUserQuestion` to confirm key decision points:
 
-- **Step 1** *(all modes)* — Confirm each CHANGELOG addition for a merged PR that has no entry, and
+- **Step 1** *(all modes)* — Confirm each changelog addition for a merged PR that has no entry, and
   the Keep a Changelog section it belongs under
 - **Step 2** *(publish)* — Confirm the version number (suggested default as first option)
 - **Step 3** *(publish)* — Confirm the `version.rb` + `CHANGELOG.md` + `Gemfile.lock` diff before it
@@ -503,7 +506,7 @@ Add #88 under Added and #89 under Fixed? [Y/n]
 
 Adding entries and their [#N] link definitions
 Creating branch changelog-catch-up
-Committing "Record merged PRs in the CHANGELOG"
+Committing "Record merged PRs in the changelog"
 Opening PR #90... ✅ All checks passed
 Merging PR #90 with rebase-and-merge? [Y/n]
 ✅ Merged
@@ -561,7 +564,7 @@ Watching release workflow run #26000000...
 Extracting release notes from CHANGELOG.md
 Creating GitHub Release v1.1.0...
 ✅ Release created: https://github.com/ExtractableMedia/fastererer/releases/tag/v1.1.0
-✅ Release body contains the expected CHANGELOG sections
+✅ Release body contains the expected changelog sections
 
 🎉 Shipped v1.1.0!
 ```
