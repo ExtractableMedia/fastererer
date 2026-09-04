@@ -235,9 +235,9 @@ This project runs the same four reviewers on every change set — there are no c
 to select between. The orchestrating agent's judgment goes into the change set and the prompts, not
 into which specialists to invoke.
 
-**A reviewer never reads this file.** Like the collator, each specialist is a subagent that sees
-only the prompt it is dispatched with, so every rule addressed to "every reviewer" anywhere above
-reaches nobody unless it is quoted into that prompt. The sections below give each reviewer's
+**A reviewer never reads this command file.** Like the collator, each specialist is a subagent that
+sees only the prompt it is dispatched with, so every rule addressed to "every reviewer" anywhere
+above reaches nobody unless it is quoted into that prompt. The sections below give each reviewer's
 *dimensions*; the prompt must additionally carry, quoted in full rather than named:
 
 - **The three things How to Report Findings requires** of each finding — describe it, assign a
@@ -376,10 +376,10 @@ Recommendation column rather than as a ⏸️ or 🚫 status glyph, and the summ
 carries ❓ rather than a blank cell. On a re-review, also restate the preservation half: existing
 statuses are carried over unchanged, a finding still marked ❓ Open stays ❓ Open unless the re-review
 shows it fixed in code, and ⏸️ or 🚫 may be written only after the user confirms that specific
-finding. The collator does not read this file — it follows the prompt, and will fill the Status
-column from the recommendations on its own if the prompt is silent. Anything in Documentation
+finding. The collator does not read this command file — it follows the prompt, and will fill the
+Status column from the recommendations on its own if the prompt is silent. Anything in Documentation
 Format, Merging with Existing Findings or Output Requirements that the collator must apply has to be
-carried into the prompt; a cross-reference to a section of this file reaches nobody.
+carried into the prompt; a cross-reference to a section of this command file reaches nobody.
 
 Quote these sections into the prompt **in full** rather than naming them: Review History, Overview,
 Severity Indicators, Numbered Findings, Organizing the Findings, What Is Not Written, Consolidated
@@ -527,7 +527,7 @@ observations is still one a reader can take in whole.
 
 Use emoji indicators for quick visual scanning of issue severity:
 
-**Actionable findings** (require attention):
+**Fixable findings** (require attention — these and the ⚖️ below are the *actionable* findings):
 
 - 🔴 **Critical** — Must fix before merge (security vulnerabilities, data loss, breaking changes)
 - 🟠 **High Priority** — Should fix before merge (bugs, missing tests, performance issues)
@@ -571,8 +571,11 @@ Decision" rather than falling back to the four glyphs.
 **All findings must be numbered sequentially** for easy reference in discussions:
 
 - Use a single global numbering scheme across all reviewers (e.g., F1, F2, F3)
-- Number findings in the order they appear in the assembled document — category by category, after
-  duplicates are merged
+- On the initial review, number findings in the order they appear in the assembled document —
+  category by category, after duplicates are merged. On a re-review, Merging with Existing Findings
+  assigns the numbers instead: a new finding takes the next free number and joins the end of its
+  category, so document order stops tracking numeric order. That is expected — the number is an
+  identifier, not a position
 - Reference findings by number in the consolidated summary table
 - Use the format: `### F1 🟡 Medium Priority - Description`
 
@@ -660,7 +663,7 @@ two views a reader actually scans, and the collator quietly picks a winner.
   string, internal hostname, private repository or internal system name, internal ticket ID,
   absolute filesystem path, or customer datum. Name the file and line and describe the value's
   shape; do not reproduce it. `CLAUDE.md`'s Public Repository section is the authority on the middle
-  few, and it governs this file because this file gets published: the review is scaffolding that can
+  few, and it governs the review because the review gets published: it is scaffolding that can
   go verbatim into a pull request comment here and is then deleted, so a quoted secret outlives both
   the file and the fix
 - When a snippet is itself Markdown containing a fenced block, open and close the outer fence with
@@ -779,8 +782,10 @@ rather than a fact about the code, it is the one ✅ that may not be written wit
 
 Convert every **actionable** finding into a concrete checklist, organized into **implementation
 groups**. Do **not** include ℹ️ or 💡 Observation findings in the checklist — neither requires
-action. Do **not** include generic "run tests" or "run linting" items — the full test suite runs on
-CI automatically.
+action. Do **not** include generic "run tests" or "run linting" items — CI runs `bin/rspec`
+whole-suite, so the coverage floors apply there, plus `bin/rubocop` and super-linter for Markdown,
+YAML, Bash and workflow files. Note those jobs trigger on pull requests against `main` only: a
+branch stacked on another feature branch runs nothing until it is retargeted.
 
 #### Implementation groups
 
@@ -793,7 +798,9 @@ states them up front instead.
 - **Membership.** Every finding recommended **Implement** belongs to exactly one group, as does
   every ⚖️ Decision and every finding whose fix depends on one. Findings recommended **Defer** or
   **Skip** are listed after the groups under **Not recommended for this change set**, still at ❓,
-  because the recommendation is advice and the user may take them anyway.
+  because the recommendation is advice and the user may take them anyway. A divergent recommendation
+  routes on its stronger half — `Implement / Defer` joins a group, `Defer / Skip` goes below the
+  line — because the user can always decline a grouped finding, but will not see an ungrouped one.
 - **Identifiers.** Groups are numbered `G1`, `G2`, … and the number is permanent: a group is never
   renumbered, and a later round that adds a group takes the next free number even if it sorts
   earlier. Work the groups in the order they appear in the checklist, not in numeric order — after a
@@ -973,8 +980,10 @@ depending on whether the user has ruled on it. Keep both rows if this example is
 
 ### File Output
 
-Save the complete review findings to `local-review.md` in the repository root. The
-**documentation-expert** agent is responsible for creating and updating this file.
+Save the complete review findings to `local-review.md` in the repository root. During a review run
+the **documentation-expert** creates and updates this file. The orchestrating agent writes it
+directly in two cases: a `--reconcile` pass, which runs no reviewer and has no collator, and the
+status updates that follow Interactive Finding Selection.
 
 - **Create** the file if it doesn't exist
 - **Merge** with existing findings if the file already exists (see below)
@@ -1032,10 +1041,13 @@ When `local-review.md` already exists, the **documentation-expert** must:
 After saving the file, output the **complete review findings** in the Claude session, in the same
 order as the file:
 
+1. **Review History** — The entry for this run, models included. It is short, and it is how a
+   reader judges the weight of everything below it without opening the file
 1. **Overview** — The verdict, the groups and any decision needed; omitted below five actionable
    findings, exactly as in the file
 1. **All findings, by category** — Full details, with the reviewer attributed on each
-1. **Consolidated summary table** — All issues with priority, category and group
+1. **Consolidated summary table** — All eight columns, Recommendation and Status included; those
+   two carry the signal the reader acts on
 1. **Pre-merge checklist** — Actionable items organized into implementation groups
 
 The session output should mirror the content saved to `local-review.md` so the developer can review
