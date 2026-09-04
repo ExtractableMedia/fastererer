@@ -1,4 +1,4 @@
-# Ship It
+# Publish It
 
 Move `fastererer` toward its next release: reconcile the changelog against what has merged, and —
 when you're ready — bump the version, promote `[Unreleased]` into a dated section, tag the merged
@@ -244,10 +244,10 @@ identical.
 
    ```bash
    git push -u origin "$BRANCH"
-   gh pr create --assignee @me --title "$TITLE" --body-file /tmp/ship-it-pr-body.md
+   gh pr create --assignee @me --title "$TITLE" --body-file /tmp/publish-it-pr-body.md
    ```
 
-   Build `/tmp/ship-it-pr-body.md` with a `## Summary` section and a `## Test plan` section. In
+   Build `/tmp/publish-it-pr-body.md` with a `## Summary` section and a `## Test plan` section. In
    `publish` mode, add a `## Release notes preview` section that pastes the new changelog section.
 
 1. **Watch CI checks:**
@@ -273,7 +273,7 @@ identical.
 
 1. **In `prepare` mode, stop here.** Report which PRs are now recorded in `[Unreleased]`, and that
    nothing was released — the version is unchanged and no tag was created. Say that
-   `/ship-it publish` cuts the release when the user is ready.
+   `/publish-it publish` cuts the release when the user is ready.
 
 ### Step 5: Sync local main with origin
 
@@ -495,7 +495,7 @@ Use `AskUserQuestion` to confirm key decision points:
 A `prepare` run, recording work that has merged without touching the version:
 
 ```text
-$ /ship-it prepare
+$ /publish-it prepare
 
 Preflight: gh authenticated, on main, working tree clean, refs fetched
 
@@ -512,13 +512,13 @@ Merging PR #90 with rebase-and-merge? [Y/n]
 ✅ Merged
 
 [Unreleased] now records #88 and #89. Version unchanged at 1.0.0, nothing tagged.
-Run `/ship-it publish` to cut the release.
+Run `/publish-it publish` to cut the release.
 ```
 
 A `publish` run some days later, once `[Unreleased]` has enough in it:
 
 ```text
-$ /ship-it publish
+$ /publish-it publish
 
 Preflight: gh authenticated, on main, working tree clean, refs fetched
 
