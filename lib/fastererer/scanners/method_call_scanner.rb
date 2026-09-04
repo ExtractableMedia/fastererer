@@ -75,9 +75,7 @@ module Fastererer
     end
 
     def check_first_offense
-      return unless method_call.receiver.is_a?(MethodCall)
-
-      case method_call.receiver.name
+      case method_call.receiver&.call_name
       when :shuffle
         add_offense(:shuffle_first_vs_sample)
       when :select
@@ -89,9 +87,7 @@ module Fastererer
     end
 
     def check_each_offense
-      return unless method_call.receiver.is_a?(MethodCall)
-
-      case method_call.receiver.name
+      case method_call.receiver&.call_name
       when :reverse
         add_offense(:reverse_each_vs_reverse_each)
       when :keys
@@ -100,8 +96,7 @@ module Fastererer
     end
 
     def check_flatten_offense
-      return unless method_call.receiver.is_a?(MethodCall)
-      return unless method_call.receiver.name == :map && method_call.arguments.one?
+      return unless method_call.receiver&.call_name == :map && method_call.arguments.one?
 
       add_offense(:map_flatten_vs_flat_map) if method_call.arguments.first.value == 1
     end
@@ -127,17 +122,14 @@ module Fastererer
     end
 
     def check_last_offense
-      return unless method_call.receiver.is_a?(MethodCall)
-      return unless method_call.receiver.name == :select
+      return unless method_call.receiver&.call_name == :select
       return if method_call.arguments.any?
 
       add_offense(:select_last_vs_reverse_detect)
     end
 
     def check_range_include_offense
-      return unless method_call.receiver.is_a?(Primitive) && method_call.receiver.range?
-
-      add_offense(:include_vs_cover_on_range)
+      add_offense(:include_vs_cover_on_range) if method_call.receiver&.range?
     end
   end
 end

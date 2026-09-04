@@ -715,6 +715,63 @@ describe Fastererer::MethodCall do
     end
   end
 
+  describe 'Receiver role' do
+    context 'with a method-call receiver' do
+      subject(:receiver) { build_method_call('1.hi(2).hello').receiver }
+
+      it 'reports the call name' do
+        expect(receiver.call_name).to eq(:hi)
+      end
+    end
+
+    context 'with the method call itself' do
+      subject(:method_call) { build_method_call('arr.map { |x| x }') }
+
+      it 'reports the call name' do
+        expect(method_call.call_name).to eq(:map)
+      end
+    end
+
+    context 'with a variable-reference receiver' do
+      subject(:receiver) { build_method_call('User.hello').receiver }
+
+      it 'answers every type query with the role default', :aggregate_failures do
+        expect(receiver).not_to be_block
+        expect(receiver).not_to be_range
+        expect(receiver).not_to be_array
+        expect(receiver).not_to be_hash
+      end
+
+      it 'has no call name and no arguments', :aggregate_failures do
+        expect(receiver.call_name).to be_nil
+        expect(receiver.arguments).to eq([])
+      end
+
+      it 'still reports its own name' do
+        expect(receiver.name).to eq(:User)
+      end
+    end
+
+    context 'with a primitive receiver' do
+      subject(:receiver) { build_method_call('(1..10).map { |x| x }').receiver }
+
+      it 'keeps range? and defaults the other type queries', :aggregate_failures do
+        expect(receiver).to be_range
+        expect(receiver).not_to be_block
+        expect(receiver).not_to be_array
+      end
+
+      it 'has no call name and no arguments', :aggregate_failures do
+        expect(receiver.call_name).to be_nil
+        expect(receiver.arguments).to eq([])
+      end
+
+      it 'has no name' do
+        expect(receiver.name).to be_nil
+      end
+    end
+  end
+
   describe '#hash?' do
     context 'with a Hash.new receiver' do
       let(:code) { 'Hash.new.update(a: 1)' }

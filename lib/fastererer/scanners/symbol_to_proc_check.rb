@@ -19,10 +19,16 @@ module Fastererer
     end
 
     def symbol_to_proc_candidate?
-      method_call.block_argument_names.one? &&
+      single_block_argument_name &&
         single_call_body? &&
         method_call.arguments.none? &&
         !method_call.lambda_literal?
+    end
+
+    # A destructured param has no name, so |(a, b), c| must not read as a single-name block
+    def single_block_argument_name
+      names = method_call.block_argument_names
+      names.first if names.size == 1
     end
 
     # A safe-nav body (foo&.bar) is excluded: arr.map(&:bar) raises on a nil element, so the rewrite
@@ -32,12 +38,11 @@ module Fastererer
       body&.size == 1 && body.first.is_a?(Prism::CallNode) && !body.first.safe_navigation?
     end
 
+    # A primitive receiver's name is nil, which never matches the named param the gate requires
     def symbol_to_proc_body?(body_call)
       body_call.arguments.none? &&
         !body_call.block? &&
-        !body_call.receiver.nil? &&
-        !body_call.receiver.is_a?(Fastererer::Primitive) &&
-        body_call.receiver.name == method_call.block_argument_names.first
+        body_call.receiver&.name == single_block_argument_name
     end
   end
 end
