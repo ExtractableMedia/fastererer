@@ -14,10 +14,11 @@ jobs:
     timeout-minutes: 10
     environment: rubygems
     permissions:
-      # id-token: write is required for rubygems.org Trusted Publishing OIDC.
+      # id-token: write is required for rubygems.org Trusted Publishing OIDC
       id-token: write
-      # contents: write is required for rubygems/release-gem to create a
-      # corresponding GitHub Release for the tag.
+      # contents: write lets `bundle exec rake release` (invoked by rubygems/release-gem) push the
+      # version tag to origin. The action itself does NOT create a GitHub Release — that's a
+      # separate step.
       contents: write
     steps:
       - uses: actions/checkout@v7
