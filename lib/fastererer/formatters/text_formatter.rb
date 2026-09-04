@@ -1,21 +1,13 @@
 # frozen_string_literal: true
 
+require_relative 'base'
 require_relative '../painter'
 require_relative 'text_statistics'
 require_relative '../explanation'
 
 module Fastererer
   module Formatters
-    class TextFormatter
-      # The gap at \x09 keeps tabs, which are printable, out of the escaping
-      UNSAFE_CHARS = /[\x00-\x08\x0A-\x1F\x7F]/
-      private_constant :UNSAFE_CHARS
-
-      def initialize(out: $stdout, err: $stderr)
-        @out = out
-        @err = err
-      end
-
+    class TextFormatter < Base
       def render(report)
         output_offenses(report)
         output_diagnostics(report)
@@ -23,8 +15,6 @@ module Fastererer
       end
 
       private
-
-      attr_reader :out, :err
 
       def output_offenses(report)
         report.findings.group_by(&:path).each_value do |path_findings|
@@ -63,10 +53,6 @@ module Fastererer
 
       def output_statistics(report)
         out.puts TextStatistics.new(report)
-      end
-
-      def sanitize(text)
-        text.to_s.scrub.gsub(UNSAFE_CHARS) { |char| format('\\x%02X', char.ord) }
       end
 
       def severity

@@ -4,9 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog] and this project adheres to [Semantic Versioning].
 
-Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/DamirSvrtan/fasterer), prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by ExtractableMedia.
+Versions 0.11.0 and earlier were released as [`fasterer`](https://github.com/DamirSvrtan/fasterer),
+prior to the fork. From 0.12.0 onward, this is `fastererer`, maintained by ExtractableMedia.
 
 ## [Unreleased]
+
+### Added
+
+- [#40]: A `-f`/`--format` flag with machine-readable output formats alongside the default `text`:
+  `json` (one document with a run `summary` and a flat `offenses` array) and `rdjsonl` (the
+  reviewdog Diagnostic Format, one record per offense, ready to pipe into reviewdog for inline PR
+  comments). Machine formats write only their payload to stdout and route diagnostics to stderr.
 
 ### Changed
 
@@ -177,6 +185,7 @@ First stable release of `fastererer` after the fork.
 [#9]: https://github.com/ExtractableMedia/fastererer/pull/9
 [#15]: https://github.com/ExtractableMedia/fastererer/pull/15
 [#28]: https://github.com/ExtractableMedia/fastererer/issues/28
+[#40]: https://github.com/ExtractableMedia/fastererer/issues/40
 [#42]: https://github.com/ExtractableMedia/fastererer/pull/42
 [#77]: https://github.com/ExtractableMedia/fastererer/issues/77
 [#84]: https://github.com/ExtractableMedia/fastererer/pull/84
