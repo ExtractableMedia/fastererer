@@ -82,18 +82,18 @@ By default fastererer prints the human-readable text shown above. Pass `-f`/`--f
 machine-readable output for editors, log aggregators, or CI reporters instead:
 
 ```shell
-fastererer --format=json      # single JSON document, includes a run summary
-fastererer --format=rdjsonl   # reviewdog JSON Lines, one record per offense
-fastererer --format=github    # GitHub Actions workflow commands, one per offense
-fastererer --format=text      # the default
+fastererer -f json      # single JSON document, includes a run summary
+fastererer -f rdjsonl   # reviewdog JSON Lines, one record per offense
+fastererer -f github    # GitHub Actions workflow commands, one per offense
+fastererer -f text      # the default
 ```
 
 Machine formats write only their payload to stdout; diagnostics (parse errors, a missing path)
-go to stderr, so `fastererer --format=json > findings.json` captures clean JSON. An unrecognized
+go to stderr, so `fastererer -f json > findings.json` captures clean JSON. An unrecognized
 format name is a usage error: the name is reported on stderr and fastererer exits `2` without
 scanning.
 
-`--format=json` produces one document with a `summary` of run counts and a flat `offenses` array
+`-f json` produces one document with a `summary` of run counts and a flat `offenses` array
 (each offense carries `path`, `line`, `rule`, `rule_key`, `message`, and `url`). `rule` is the
 display name; `rule_key` is the identifier to write under `speedups:` in `.fastererer.yml`, so a
 consumer can offer to silence a rule without guessing at the name:
@@ -115,7 +115,7 @@ consumer can offer to silence a rule without guessing at the name:
 }
 ```
 
-`--format=rdjsonl` follows the [reviewdog Diagnostic Format][rdf], one JSON object per line, ready
+`-f rdjsonl` follows the [reviewdog Diagnostic Format][rdf], one JSON object per line, ready
 to pipe straight into reviewdog (see [CI integration](#ci-integration)). `code.value` carries the
 rule key rather than the display name, because reviewdog renders it into the pull request comment
 and the key is the name a reader can act on — the one to add under `speedups:` in `.fastererer.yml`:
@@ -124,7 +124,7 @@ and the key is the name a reader can act on — the one to add under `speedups:`
 {"message":"Array#select.first is slower than Array#detect","location":{"path":"app/models/post.rb","range":{"start":{"line":57}}},"severity":"WARNING","code":{"value":"select_first_vs_detect","url":"https://github.com/fastruby/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code"}}
 ```
 
-`--format=github` emits [GitHub Actions workflow commands][workflow-commands], one `::warning` line
+`-f github` emits [GitHub Actions workflow commands][workflow-commands], one `::warning` line
 per offense, which the Actions runner turns into inline annotations on the pull request without any
 other tooling (see [Inline annotations on GitHub Actions](#inline-annotations-on-github-actions)).
 The message leads with the rule key, for the same reason `rdjsonl` puts it in `code.value`:
@@ -201,7 +201,7 @@ The `rdjsonl` format is consumed natively by [reviewdog](https://github.com/revi
 which can post findings as inline GitHub PR review comments:
 
 ```shell
-bundle exec fastererer --format=rdjsonl \
+bundle exec fastererer -f rdjsonl \
   | reviewdog -f=rdjsonl -name=fastererer -filter-mode=nofilter -reporter=github-pr-review
 ```
 
@@ -222,7 +222,7 @@ commands straight off stdout and renders them as inline annotations:
 
 ```yaml
 - name: Run fastererer
-  run: bundle exec fastererer --format=github
+  run: bundle exec fastererer -f github
 ```
 
 Every finding is reported; nothing is filtered to the pull request diff. As with reviewdog, run
