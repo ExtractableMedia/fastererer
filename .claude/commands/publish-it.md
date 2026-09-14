@@ -1,50 +1,54 @@
 # Publish It
 
-Move `fastererer` toward its next release: reconcile the changelog against what has merged, and —
-when you're ready — bump the version, promote `[Unreleased]` into a dated section, tag the merged
-commit, publish the gem to RubyGems and create the matching GitHub Release.
+Cut the next `fastererer` release: bump the version, promote `[Unreleased]` into a dated section,
+merge that through a pull request, tag the merged commit, publish the gem to RubyGems and create the
+matching GitHub Release.
 
-## Arguments
+This command publishes. It does not prepare branches for merge — `/ship-it` does that, and it is
+what records each change in `[Unreleased]` as the work lands. By the time `/publish-it` runs, the
+changelog should already be complete; Step 1 is a safety net for anything that merged without it.
 
-`$ARGUMENTS` selects the mode. The two halves exist so that merging work doesn't have to mean
-releasing it:
-
-- **`prepare`** — reconcile the changelog's `[Unreleased]` section against PRs merged since the last
-  tag and push any additions through a PR, then stop. No version bump, no tag, no publish. Run it as
-  often as you like between releases and `[Unreleased]` accumulates.
-- **`publish`** — reconcile as above, then cut the release: bump the version and `Gemfile.lock`,
-  promote `[Unreleased]`, merge that through a PR, tag it, and publish.
-- **no argument** — the same as `publish`. Reconciliation and the bump ride in a single PR.
-
-The version bump lives entirely in the publish half, so `main` never carries a bumped-but-unreleased
-version. The bump commit merges and the tag goes out in the same run, which is what lets Step 6 keep
-requiring `HEAD` to be the release commit.
-
-Each step states the modes it runs in. Skip a step entirely when the current mode isn't listed — do
-not run it "harmlessly".
+Run it from `main`, with the work you intend to release already merged.
 
 ## Overview
 
-1. Reconcile the changelog against PRs merged since the last tag *(all modes)*
+1. Reconcile the changelog against pull requests merged since the last tag
 1. Determine the new version number, defaulting from the now-complete `[Unreleased]` section
-   *(publish)*
 1. Bump `lib/fastererer/version.rb` and `Gemfile.lock`, and promote `[Unreleased]` into a new dated
-   section per [Keep a Changelog 1.1.0] *(publish)*
-1. Commit, push, open a PR, watch CI, and merge with "Rebase and merge" *(all modes — `prepare`
-   stops here)*
-1. Sync local `main` with `origin/main` *(publish)*
+   section per [Keep a Changelog 1.1.0]
+1. Commit, push, open a pull request, watch CI, and merge with "Rebase and merge"
+1. Sync local `main` with `origin/main`
 1. Tag the merged commit, push it, and watch the gated release workflow publish the gem to RubyGems
-   once a human approves the deployment *(publish)*
+   once a human approves the deployment
 1. Create the GitHub Release from the new changelog section and confirm the posted body carries the
-   expected changelog sections *(publish)*
+   expected changelog sections
 
 [Keep a Changelog 1.1.0]: https://keepachangelog.com/en/1.1.0/
+
+## Scratch directory
+
+Several steps write temporary files. Create one run directory up front and reuse it, rather than
+scattering fixed names through `/tmp`:
+
+```bash
+RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/publish-it.XXXXXXXX"); echo "$RUN_DIR"
+```
+
+`mktemp -d` creates the directory mode 0700 with an unpredictable suffix, so nothing can pre-plant a
+symlink at a path this run is about to redirect into, and no leftover file from an earlier run can
+be read back and published as this run's release notes. Both are possible with a fixed
+`/tmp/release-notes.md`, and the second is the likelier accident: Step 7 appends its footer with
+`>>`, so a re-run after a partial failure would otherwise append a second footer to the first run's
+file.
+
+**Record the printed path and write it literally into every later command.** Do not wrap this in a
+`trap … EXIT` cleanup: each Bash call runs in its own shell, so the trap fires at the end of the
+very command that created the directory. Remove the directory in Step 7, after the release body has
+been verified.
 
 ## Process
 
 ### Preflight checks
-
-*Runs in: all modes.*
 
 Before starting Step 1, verify the environment is in a known state. Every path below is relative to
 the repository root, so run from there:
@@ -53,11 +57,13 @@ the repository root, so run from there:
 
    ```bash
    gh auth status
-   command -v jq curl perl ruby
+   command -v jq curl ruby
    ```
 
-   `gh` needs permission to merge pull requests and create releases, and `jq` is load-bearing in
-   three later steps. A missing tool should abort here rather than mid-release.
+   `gh` needs permission to merge pull requests and create releases. Only one later step needs the
+   `jq` binary — the `curl` in Step 6 that checks RubyGems; the `gh --json … --jq` calls elsewhere
+   use gh's own embedded engine and would work without it. A missing tool should abort here rather
+   than mid-release.
 
 1. **Confirm `main` is the current branch:**
 
@@ -83,12 +89,13 @@ the repository root, so run from there:
    git fetch --tags origin
    ```
 
-### Step 1: Reconcile the changelog against merged PRs
+### Step 1: Reconcile the changelog against merged pull requests
 
-*Runs in: all modes.* Reconciling before anything else is what makes Step 2's suggested bump
-trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a complete section.
+`/ship-it` should already have recorded each merged change, so this step normally finds nothing to
+add. It runs first regardless, because Step 2's suggested bump reads `[Unreleased]` and is only
+trustworthy against a complete section.
 
-1. **List PRs merged into `main` since the last version tag:**
+1. **List pull requests merged into `main` since the last version tag:**
 
    ```bash
    LAST_TAG=$(git describe --tags --abbrev=0)
@@ -98,30 +105,26 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
    ```
 
    The `cut` truncates the tag's commit timestamp to `YYYY-MM-DD`, which is the format GitHub's
-   search API matches reliably (full ISO 8601 timestamps can produce edge-case misses for PRs merged
-   in the same minute).
+   search API matches reliably (full ISO 8601 timestamps can produce edge-case misses for pull
+   requests merged in the same minute).
 
-1. **Add an entry for every merged PR that isn't represented.** Compare the list against the
-   `[Unreleased]` section, and for each PR with no entry ask the user via `AskUserQuestion` whether
-   to add it and under which Keep a Changelog section.
+1. **Add an entry for every merged pull request that isn't represented.** Compare the list against
+   the `[Unreleased]` section, and for each pull request with no entry ask the user via
+   `AskUserQuestion` whether to add it and under which Keep a Changelog section.
 
-   Entries use reference-style links, so each new `[#N]` needs a matching
-   `[#N]: https://github.com/ExtractableMedia/fastererer/pull/N` def in the block at the bottom of
-   the file, keeping its ascending-by-number order — use `/issues/N` where the reference is an issue
-   rather than a PR. Without the def the entry renders literally as `[#N]` on GitHub.
+   Write the entry exactly as `/ship-it` Step 8 describes — the leading `[#N]:` label, the matching
+   link definition in the block at the bottom, ascending by number. That step is the primary path
+   and this one is the exception, so keep the format defined in one place rather than restating it
+   here and letting the two drift.
 
-1. **If nothing needed adding, decide whether there is anything left to do:**
-
-   - In `prepare` mode, stop here. There is no commit to make, so do not create a branch or open
-     a PR. Say which of the two reasons applies: every merged PR already has an entry, or nothing
-     that merged warrants one. A window of only tooling, CI, dependency and documentation work
-     reaches this point with `[Unreleased]` still empty and nothing recorded, so reporting it as
-     "already recorded" would be false
-   - In `publish` mode, continue to Step 2 — the release itself is still ahead
+1. **If nothing needed adding, continue to Step 2.** That is the expected outcome when `/ship-it`
+   has been run on each branch, and it is not a reason to stop — the release itself is still ahead.
+   Say which of the two reasons applies: every merged pull request already has an entry, or nothing
+   that merged warranted one. A window of only tooling, CI, dependency and documentation work
+   reaches this point with `[Unreleased]` still empty, and reporting that as "already recorded"
+   would be false. An empty `[Unreleased]` aborts in Step 2.
 
 ### Step 2: Determine the new version
-
-*Runs in: `publish`. Skip entirely in `prepare`.*
 
 1. **Read the current version** from `lib/fastererer/version.rb`:
 
@@ -144,31 +147,36 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
 1. **Confirm the version** with the user via `AskUserQuestion`, presenting the suggested default and
    letting them override (e.g., to skip ahead, or to reclassify a change the heuristic misread).
 
-1. **Capture the confirmed version into `NEW_VERSION`** for use in all later steps. Every subsequent
-   code block assumes this variable is set:
+1. **Validate the answer before it reaches a shell command,** while it is still a string returned by
+   `AskUserQuestion`:
+
+   - Must match `^\d+\.\d+\.\d+$`
+   - Must be greater than the current version
+
+   Validating first is the point — the assignment below is where a malformed value would first be
+   interpreted, so a check placed after it guards every later use except the one that introduces it.
+
+1. **Capture the confirmed version into `NEW_VERSION`.** Like `RUN_DIR`, this is a placeholder
+   rather than a live variable: each Bash call runs in its own shell, so it does not survive to the
+   next command. Record the value and write it literally into every later block — the same applies
+   to `BRANCH`, `TITLE`, `SHA` and `RUN_ID`.
 
    ```bash
    NEW_VERSION="X.Y.Z"   # replace with the version returned by AskUserQuestion
    ```
 
-1. **Validate the chosen version:**
+1. **Confirm the matching `vX.Y.Z` tag does not already exist,** locally or on origin:
 
-   - Must match `^\d+\.\d+\.\d+$`
-   - Must be greater than the current version
-   - The matching `vX.Y.Z` tag must not already exist locally or on origin:
-
-     ```bash
-     git tag --list "v$NEW_VERSION" | grep . && echo "tag exists locally"
-     git ls-remote --tags origin "refs/tags/v$NEW_VERSION" | grep . && echo "tag exists on origin"
-     ```
+   ```bash
+   git tag --list "v$NEW_VERSION" | grep . && echo "tag exists locally"
+   git ls-remote --tags origin "refs/tags/v$NEW_VERSION" | grep . && echo "tag exists on origin"
+   ```
 
    If the tag exists on origin, abort — that version is already released. If it exists locally but
    not on origin, it is most likely a leftover from an aborted run: confirm with the user, then
    `git tag -d "v$NEW_VERSION"` and continue.
 
 ### Step 3: Bump the version and promote the changelog
-
-*Runs in: `publish`. Skip entirely in `prepare`.*
 
 1. **Bump `lib/fastererer/version.rb`** by editing the `VERSION` constant from the current value to
    the new one, then refresh the lockfile:
@@ -195,18 +203,12 @@ trustworthy — the heuristic reads `[Unreleased]`, so it has to run against a c
    - Add a new `[X.Y.Z]: .../compare/vPREV...vX.Y.Z` def directly below `[Unreleased]`, preserving
      the descending order of older versions
 
-### Step 4: Commit, push, open PR, watch CI, merge
+### Step 4: Commit, push, open pull request, watch CI, merge
 
-*Runs in: all modes.* The branch name, commit subject and PR body differ by mode; everything else is
-identical.
-
-1. **Set the branch and title for the mode:**
+1. **Set the branch and title:**
 
    ```bash
-   # publish, and the no-argument run
    BRANCH="release-v$NEW_VERSION"; TITLE="Prepare v$NEW_VERSION release"
-   # prepare
-   BRANCH="changelog-catch-up";    TITLE="Record merged PRs in the changelog"
    ```
 
 1. **Sync `main` and create the branch from it.** The Preflight step confirmed `main` is checked
@@ -217,9 +219,9 @@ identical.
    git pull --ff-only origin main
    ```
 
-   Check for a pre-existing `$BRANCH` — local or remote — left over from a prior aborted run.
-   `changelog-catch-up` is reused by every `prepare` run, so in that mode a leftover is the likely
-   case rather than the exceptional one:
+   Check for a pre-existing `$BRANCH` — local or remote — left over from a prior aborted run. The
+   branch name carries the version, so a leftover means a previous attempt at this same release did
+   not finish:
 
    ```bash
    git rev-parse --verify "$BRANCH" 2>/dev/null
@@ -236,19 +238,18 @@ identical.
    git checkout -b "$BRANCH"
    ```
 
-1. **Commit using `/commit`,** with `$TITLE` as the suggested subject. In `publish` mode the body
-   should summarize the change types being released (counts under each Keep a Changelog section
-   header); in `prepare` mode it should say which merged PRs are now recorded.
+1. **Commit using `/commit`,** with `$TITLE` as the suggested subject. The body should summarize the
+   change types being released — the counts under each Keep a Changelog section heading.
 
-1. **Push and open a PR:**
+1. **Push and open a pull request:**
 
    ```bash
    git push -u origin "$BRANCH"
-   gh pr create --assignee @me --title "$TITLE" --body-file /tmp/publish-it-pr-body.md
+   gh pr create --assignee @me --title "$TITLE" --body-file "$RUN_DIR/pr-body.md"
    ```
 
-   Build `/tmp/publish-it-pr-body.md` with a `## Summary` section and a `## Test plan` section. In
-   `publish` mode, add a `## Release notes preview` section that pastes the new changelog section.
+   Build `$RUN_DIR/pr-body.md` with a `## Summary` section, a `## Test plan` section, and a
+   `## Release notes preview` section that pastes the new changelog section.
 
 1. **Watch CI checks:**
 
@@ -264,20 +265,13 @@ identical.
 
 1. **Merge using "Rebase and merge":**
 
-   Use `AskUserQuestion` to confirm. In `publish` mode this is the point of no return for the
-   version bump. Then:
+   Use `AskUserQuestion` to confirm. This is the point of no return for the version bump. Then:
 
    ```bash
    gh pr merge --rebase --delete-branch
    ```
 
-1. **In `prepare` mode, stop here.** Report which PRs are now recorded in `[Unreleased]`, and that
-   nothing was released — the version is unchanged and no tag was created. Say that
-   `/publish-it publish` cuts the release when the user is ready.
-
 ### Step 5: Sync local main with origin
-
-*Runs in: `publish`.*
 
 ```bash
 git checkout main
@@ -288,8 +282,6 @@ If `--ff-only` fails (local `main` diverged), surface the conflict and pause. Do
 reset; the user may have intentional local state.
 
 ### Step 6: Tag the release commit and publish
-
-*Runs in: `publish`.*
 
 1. **Confirm `HEAD` is the merged release commit:**
 
@@ -357,8 +349,6 @@ reset; the user may have intentional local state.
 
 ### Step 7: Create the GitHub Release
 
-*Runs in: `publish`.*
-
 1. **Extract the new version's section** from `CHANGELOG.md` into release notes. The script reads
    everything between the new version heading and the next `##` heading:
 
@@ -371,31 +361,31 @@ reset; the user may have intentional local state.
        break if found && line.start_with?("## ")
        print line if found
      end
-   ' "$NEW_VERSION" CHANGELOG.md > /tmp/release-notes.md
-   [ -s /tmp/release-notes.md ] || echo "No [$NEW_VERSION] section found in CHANGELOG.md"
+   ' "$NEW_VERSION" CHANGELOG.md > "$RUN_DIR/release-notes.md"
+   [ -s "$RUN_DIR/release-notes.md" ] || echo "No [$NEW_VERSION] section found in CHANGELOG.md"
    ```
 
-   This deliberately uses no dollar-digit token. A slash command's arguments are interpolated
-   into this file before it runs, and every dollar-digit placeholder is replaced — which silently
-   broke the `awk` version of this script, since awk names the current record with exactly that
-   form. Matching with `start_with?` on a plain string also means there is no regex at all, so
-   the dots in `0.13.0` cannot act as wildcards and need no escaping.
+   This deliberately uses no dollar-digit token. A slash command's arguments are interpolated into
+   this file before it runs, and every dollar-digit placeholder is replaced — which silently broke
+   the `awk` version of this script, since awk names the current record with exactly that form.
+   Matching with `start_with?` on a plain string also means there is no regex at all, so the dots in
+   `0.13.0` cannot act as wildcards and need no escaping.
 
    The extraction exits 0 whether or not it matched, so the emptiness check is what catches a
    heading that doesn't take the `## [X.Y.Z] - YYYY-MM-DD` form Step 3 wrote — abort and fix the
    heading rather than publishing a release whose body is nothing but the footer.
 
-1. **Convert `[#N]` reference-style PR refs to bare `#N`** so they render without bracket cruft in
-   the release body (GitHub's autolinker handles `#N` in repo-context release pages):
+1. **Convert `[#N]` reference-style pull request refs to bare `#N`** so they render without bracket
+   cruft in the release body (GitHub's autolinker handles `#N` in repo-context release pages):
 
    ```bash
-   ruby -i -pe 'gsub(/\[#(\d+)\]/, "#\\1")' /tmp/release-notes.md
+   ruby -i -pe 'gsub(/\[#(\d+)\]/, "#\\1")' "$RUN_DIR/release-notes.md"
    ```
 
    `ruby -i` edits in place identically on macOS and Linux, unlike `sed -i`, which needs different
    argument syntax on each. The backreference is written `\1` with a backslash rather than in the
-   dollar-digit form, for the same reason the block above avoids awk's record variable: those
-   tokens are slash-command argument placeholders, replaced before the line ever runs.
+   dollar-digit form, for the same reason the block above avoids awk's record variable: those tokens
+   are slash-command argument placeholders, replaced before the line ever runs.
 
 1. **Append a footer** with the compare link and the RubyGems page. URLs are assigned to variables
    first so the heredoc lines stay readable:
@@ -404,7 +394,7 @@ reset; the user may have intentional local state.
    PREV=$(git describe --tags --abbrev=0 "v$NEW_VERSION^")  # nearest tag before the release
    COMPARE_URL="https://github.com/ExtractableMedia/fastererer/compare/$PREV...v$NEW_VERSION"
    GEM_URL="https://rubygems.org/gems/fastererer/versions/$NEW_VERSION"
-   cat >> /tmp/release-notes.md <<EOF
+   cat >> "$RUN_DIR/release-notes.md" <<EOF
 
    ---
 
@@ -423,7 +413,7 @@ reset; the user may have intentional local state.
    ```bash
    gh release create "v$NEW_VERSION" \
      --title "v$NEW_VERSION" \
-     --notes-file /tmp/release-notes.md \
+     --notes-file "$RUN_DIR/release-notes.md" \
      --latest
    ```
 
@@ -431,8 +421,9 @@ reset; the user may have intentional local state.
    section headings:
 
    ```bash
-   gh release view "v$NEW_VERSION" --json body --jq '.body' > /tmp/release-body.md
-   if grep -q "^### \(Added\|Changed\|Deprecated\|Removed\|Fixed\|Security\)" /tmp/release-body.md
+   BODY="$RUN_DIR/release-body.md"
+   gh release view "v$NEW_VERSION" --json body --jq '.body' > "$BODY"
+   if grep -q "^### \(Added\|Changed\|Deprecated\|Removed\|Fixed\|Security\)" "$BODY"
    then
      echo "Release body contains Keep a Changelog sections"
    else
@@ -445,7 +436,7 @@ reset; the user may have intentional local state.
    against the file we posted is fragile because GitHub normalizes trailing whitespace and newlines,
    so this structural check stands in for it — note that it confirms the sections are present, not
    that they came from the right version. If it fails, do not report success: correct the body with
-   `gh release edit "v$NEW_VERSION" --notes-file /tmp/release-notes.md`.
+   `gh release edit "v$NEW_VERSION" --notes-file "$RUN_DIR/release-notes.md"`.
 
 1. **Report the release URL** to the user as the final confirmation:
 
@@ -453,30 +444,37 @@ reset; the user may have intentional local state.
    gh release view "v$NEW_VERSION" --json url --jq '.url'
    ```
 
-## Interactive Confirmations
+1. **Remove the scratch directory** once the release body has been verified:
+
+   ```bash
+   rm -rf -- "$RUN_DIR"
+   ```
+
+   Leave it in place if the verification above failed — it holds the release notes as they were
+   assembled, which is what `gh release edit` needs to correct the posted body.
+
+## Interactive confirmations
 
 Use `AskUserQuestion` to confirm key decision points:
 
-- **Step 1** *(all modes)* — Confirm each changelog addition for a merged PR that has no entry, and
-  the Keep a Changelog section it belongs under
-- **Step 2** *(publish)* — Confirm the version number (suggested default as first option)
-- **Step 3** *(publish)* — Confirm the `version.rb` + `CHANGELOG.md` + `Gemfile.lock` diff before it
-  is committed in Step 4
-- **Step 4** *(all modes)* — Confirm whether to delete a leftover branch from an aborted run, and
-  confirm before merging the PR. In `publish` mode that merge is the point of no return for the
-  version bump
-- **Step 6** *(publish)* — Confirm before creating and pushing the tag (the push starts the gated
-  release workflow; once a human approves the deployment, the published gem can be yanked but not
-  deleted)
+- **Step 1** — Confirm each changelog addition for a merged pull request that has no entry, and the
+  Keep a Changelog section it belongs under
+- **Step 2** — Confirm the version number, offering the suggested default as the first option
+- **Step 3** — Confirm the `version.rb` + `CHANGELOG.md` + `Gemfile.lock` diff before it is
+  committed in Step 4
+- **Step 4** — Confirm whether to delete a leftover branch from an aborted run, and confirm before
+  merging the pull request; that merge is the point of no return for the version bump
+- **Step 6** — Confirm before creating and pushing the tag. The push starts the gated release
+  workflow, and once a human approves the deployment the published gem can be yanked but not deleted
 
-## Important Notes
+## Important notes
 
-- **Never** create a release commit directly on `main` — always go through a PR
+- **Never** create a release commit directly on `main` — always go through a pull request
 - **Never** force-push `main` or replace an existing tag with a new target
 - **Never** approve the `rubygems` environment gate on the user's behalf — surface the run URL and
   let them approve it
-- **Never** bump the version in `prepare` mode. The bump and the tag belong to the same run; a
-  bumped-but-untagged `main` is the state this split exists to avoid
+- **Never** leave `main` carrying a bumped-but-untagged version. The bump commit merges and the tag
+  goes out in the same run, which is what lets Step 6 require `HEAD` to be the release commit
 - **Always** update `Gemfile.lock` alongside `lib/fastererer/version.rb` in the same commit; the
   `Gemfile` uses `gemspec`, so a stale lockfile fails every CI job at "Set up Ruby" with exit code
   16 before any test runs
@@ -488,37 +486,15 @@ Use `AskUserQuestion` to confirm key decision points:
 - If the release workflow fails after the gem publishes (e.g., the `rubygems/release-gem` action
   times out waiting for the version to propagate), the gem is still published — re-run the failed
   step or proceed to Step 7 manually
-- If `[Unreleased]` is empty after reconciliation, `publish` aborts early: there's nothing to ship
+- If `[Unreleased]` is empty after reconciliation, Step 2 aborts: nothing has merged since the last
+  tag that a user of the gem would notice, so there is no release to cut
+- **Recording changes is `/ship-it`'s job.** Step 1 exists to catch what merged without it, not as
+  the normal route — a reconcile that keeps finding gaps means branches are skipping `/ship-it`
 
-## Example Workflows
-
-A `prepare` run, recording work that has merged without touching the version:
-
-```text
-$ /publish-it prepare
-
-Preflight: gh authenticated, on main, working tree clean, refs fetched
-
-Checking PRs merged since v1.0.0...
-  #88 Add a scanner for Array#count with no block   → not in [Unreleased]
-  #89 Fix false positive on safe-navigation chains  → not in [Unreleased]
-Add #88 under Added and #89 under Fixed? [Y/n]
-
-Adding entries and their [#N] link definitions
-Creating branch changelog-catch-up
-Committing "Record merged PRs in the changelog"
-Opening PR #90... ✅ All checks passed
-Merging PR #90 with rebase-and-merge? [Y/n]
-✅ Merged
-
-[Unreleased] now records #88 and #89. Version unchanged at 1.0.0, nothing tagged.
-Run `/publish-it publish` to cut the release.
-```
-
-A `publish` run some days later, once `[Unreleased]` has enough in it:
+## Example workflow
 
 ```text
-$ /publish-it publish
+$ /publish-it
 
 Preflight: gh authenticated, on main, working tree clean, refs fetched
 
@@ -566,5 +542,5 @@ Creating GitHub Release v1.1.0...
 ✅ Release created: https://github.com/ExtractableMedia/fastererer/releases/tag/v1.1.0
 ✅ Release body contains the expected changelog sections
 
-🎉 Shipped v1.1.0!
+🎉 Published v1.1.0!
 ```
