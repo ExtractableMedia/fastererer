@@ -1,0 +1,31 @@
+# Defaults shipped with fastererer. A project's .fastererer.yml layers over this file: keys it
+# sets win, keys it omits keep the values below, and its exclude_paths are added to these rather
+# than replacing them.
+
+speedups:
+  block_vs_symbol_to_proc: true
+  each_with_index_vs_while: true
+  fetch_with_argument_vs_block: true
+  for_loop_vs_each: true
+  getter_vs_attr_reader: true
+  gsub_vs_tr: true
+  hash_merge_bang_vs_hash_brackets: true
+  include_vs_cover_on_range: true
+  keys_each_vs_each_key: true
+  map_flatten_vs_flat_map: true
+  module_eval: true
+  proc_call_vs_yield: true
+  rescue_vs_respond_to: true
+  reverse_each_vs_reverse_each: true
+  select_first_vs_detect: true
+  select_last_vs_reverse_detect: true
+  setter_vs_attr_writer: true
+  shuffle_first_vs_sample: true
+  sort_vs_sort_by: true
+
+exclude_paths:
+  - 'tmp/**/*.rb'
+  - 'vendor/**/*.rb'
+  - 'node_modules/**/*.rb'
+
+new_speedups: warn

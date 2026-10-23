@@ -12,6 +12,7 @@ describe Fastererer::CLI do
     before { stub_const('ARGV', argv) }
 
     let(:argv) { [] }
+    let(:config_name) { Fastererer::Config::FILE_NAME }
 
     context 'when a scanned file has an offense' do
       before { create_file('user.rb', '[].shuffle.first') }
@@ -120,6 +121,80 @@ describe Fastererer::CLI do
       it 'names the format on the error stream and exits', :aggregate_failures do
         expect { described_class.execute(err: err) }.to raise_error(SystemExit)
         expect(err.string).to include('Unknown format')
+      end
+    end
+
+    context 'with a speedup held back by the default warn mode' do
+      let(:err) { StringIO.new }
+      let(:out) { StringIO.new }
+
+      before { create_file(config_name, ['speedups:', '  gsub_vs_tr: pending']) }
+
+      it 'names it on the error stream' do
+        described_class.execute(out: out, err: err)
+        expect(err.string).to include('1 new speedup is held back: gsub_vs_tr')
+      end
+
+      it 'points at both ways to resolve it' do
+        described_class.execute(out: out, err: err)
+        expect(err.string).to include('Set new_speedups to `enable`')
+      end
+
+      it 'keeps the notice off the output stream' do
+        described_class.execute(out: out, err: err)
+        expect(out.string).not_to include('held back')
+      end
+    end
+
+    context 'with several speedups held back' do
+      let(:err) { StringIO.new }
+
+      before do
+        create_file(config_name,
+                    ['speedups:', '  gsub_vs_tr: pending', '  sort_vs_sort_by: pending'])
+      end
+
+      it 'pluralizes the notice' do
+        described_class.execute(out: StringIO.new, err: err)
+        expect(err.string).to include('2 new speedups are held back')
+      end
+    end
+
+    context 'with a held-back speedup and new_speedups set to enable' do
+      let(:err) { StringIO.new }
+
+      before do
+        create_file(config_name, ['speedups:', '  gsub_vs_tr: pending', 'new_speedups: enable'])
+      end
+
+      it 'says nothing, because nothing is being held back' do
+        described_class.execute(out: StringIO.new, err: err)
+        expect(err.string).to be_empty
+      end
+    end
+
+    context 'with a held-back speedup and new_speedups set to disable' do
+      let(:err) { StringIO.new }
+
+      before do
+        create_file(config_name, ['speedups:', '  gsub_vs_tr: pending', 'new_speedups: disable'])
+      end
+
+      it 'says nothing, because the user already decided' do
+        described_class.execute(out: StringIO.new, err: err)
+        expect(err.string).to be_empty
+      end
+    end
+
+    context 'with an unreadable configuration' do
+      let(:err) { StringIO.new }
+
+      before { create_file(config_name, ['new_speedups: sometimes']) }
+
+      it 'reports the problem and exits with the usage status', :aggregate_failures do
+        expect { described_class.execute(err: err) }
+          .to raise_error(SystemExit) { |error| expect(error.status).to eq(2) }
+        expect(err.string).to include('new_speedups must be one of')
       end
     end
   end

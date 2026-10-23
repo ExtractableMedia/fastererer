@@ -125,39 +125,82 @@ and the key is the name a reader can act on — the one to add under `speedups:`
 
 ## Configuration
 
-Configuration lives in a `.fastererer.yml` file at the root of your project (or any ancestor
-directory). It supports two options:
+Fastererer works with no configuration. Out of the box every speedup is active, and `tmp/`,
+`vendor/` and `node_modules/` are skipped.
 
-* Turn individual speedup checks off
-* Exclude files or directories
+Add a `.fastererer.yml` at the root of your project (or any ancestor directory) only when you want
+to change something. The file holds **your overrides**: anything you leave out keeps the value
+fastererer ships with, so you never restate the full list.
 
-Example:
+### Turning a speedup off
+
+List only the speedups you want to change. Every speedup you don't mention stays on.
 
 ```yaml
 speedups:
-  rescue_vs_respond_to: true
-  module_eval: true
-  shuffle_first_vs_sample: true
-  for_loop_vs_each: true
   each_with_index_vs_while: false
-  map_flatten_vs_flat_map: true
-  reverse_each_vs_reverse_each: true
-  select_first_vs_detect: true
-  sort_vs_sort_by: true
-  fetch_with_argument_vs_block: true
-  keys_each_vs_each_key: true
-  hash_merge_bang_vs_hash_brackets: true
-  block_vs_symbol_to_proc: true
-  proc_call_vs_yield: true
-  gsub_vs_tr: true
-  select_last_vs_reverse_detect: true
-  getter_vs_attr_reader: true
-  setter_vs_attr_writer: true
-  include_vs_cover_on_range: true
+  gsub_vs_tr: false
+```
 
+Only an explicit `false` switches a speedup off. Writing `true` is allowed but never necessary, and
+a key with no value at all inherits the shipped default rather than being read as off.
+
+The keys are the snake_case names listed under [Available speedups](#available-speedups). Offense
+output shows the same rule in its display form: `gsub_vs_tr` reports as `Performance/GsubVsTr`.
+
+### Excluding files and directories
+
+Fastererer already skips `tmp/**/*.rb`, `vendor/**/*.rb` and `node_modules/**/*.rb`. Add your own:
+
+```yaml
 exclude_paths:
-  - 'vendor/**/*.rb'
   - 'db/schema.rb'
+```
+
+> **Note:** Paths you list here are **added to** the three defaults above, not substituted for
+> them. This differs from RuboCop, where `AllCops/Exclude` replaces the shipped list and adding one
+> entry silently drops the rest.
+
+Globs resolve relative to the directory you run from. A file named directly on the command line is
+always scanned, even when `exclude_paths` matches it, so `fastererer vendor/foo.rb` inspects that
+file rather than reporting a clean scan.
+
+### When a new speedup ships
+
+A release may add new speedups. Turning one on for everyone the moment they upgrade would change
+what fails your build without you asking, so a newly added speedup starts out **held back**:
+fastererer names it once on the error stream and reports no offenses for it. Upgrading never turns
+a green build red on its own.
+
+`new_speedups` decides what happens to held-back speedups:
+
+| Value | What happens |
+| ----- | ------------ |
+| `warn` | They are named on the error stream, report no offenses, and do not affect the exit status. This is what you get if you don't set it. |
+| `enable` | They are active as soon as you upgrade. |
+| `disable` | They stay off, silently. |
+
+```yaml
+new_speedups: enable
+```
+
+Naming a speedup under `speedups:` yourself always wins over `new_speedups`, so you can adopt them
+one at a time. `pending` is accepted as a synonym for `warn`, for anyone with RuboCop's `NewCops`
+in muscle memory.
+
+### Available speedups
+
+```text
+block_vs_symbol_to_proc            keys_each_vs_each_key
+each_with_index_vs_while           map_flatten_vs_flat_map
+fetch_with_argument_vs_block       module_eval
+for_loop_vs_each                   proc_call_vs_yield
+getter_vs_attr_reader              rescue_vs_respond_to
+gsub_vs_tr                         reverse_each_vs_reverse_each
+hash_merge_bang_vs_hash_brackets   select_first_vs_detect
+include_vs_cover_on_range          select_last_vs_reverse_detect
+setter_vs_attr_writer              shuffle_first_vs_sample
+sort_vs_sort_by
 ```
 
 ## CI integration
@@ -176,7 +219,7 @@ step:
 | ------ | ------- |
 | `0` | The scan completed and no offenses were found |
 | `1` | The scan completed and offenses were found |
-| `2` | Usage error — an unknown flag or format, or a path that does not exist, so nothing was scanned |
+| `2` | Usage error — an unknown flag or format, a path that does not exist, or a `.fastererer.yml` that cannot be read, so nothing was scanned |
 
 Status `2` is kept distinct from `1` so a wrapper script can tell "the tool ran and found problems"
 from "you invoked me wrong". A renamed directory, a mistyped flag or an unknown `--format` value
@@ -213,6 +256,9 @@ Color output is auto-disabled when STDOUT isn't a TTY, when `NO_COLOR` is set (s
 1. Replace `gem 'fasterer'` with `gem 'fastererer'` in your `Gemfile`
 2. Rename `.fasterer.yml` to `.fastererer.yml`
 3. Update CI commands from `fasterer` to `fastererer`
+
+Your existing file keeps working. Because a project config now layers over the defaults, you can
+trim it to just the speedups you set to `false` and the paths you exclude beyond the defaults.
 
 ## Roadmap
 

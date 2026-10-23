@@ -11,9 +11,7 @@ require_relative 'formatters/text_formatter'
 
 module Fastererer
   class FileTraverser
-    CONFIG_FILE_NAME  = Config::FILE_NAME
-    SPEEDUPS_KEY      = Config::SPEEDUPS_KEY
-    EXCLUDE_PATHS_KEY = Config::EXCLUDE_PATHS_KEY
+    CONFIG_FILE_NAME = Config::FILE_NAME
 
     attr_reader :config, :parse_error_paths
 
@@ -29,10 +27,6 @@ module Fastererer
       @formatter.render(build_report)
     end
 
-    def config_file
-      config.file
-    end
-
     def offenses_found?
       findings.any?
     end
@@ -43,7 +37,10 @@ module Fastererer
       @path_missing = !@path.exist?
     end
 
+    # A file named on the command line is scanned even when exclude_paths matches it
     def scannable_files
+      return all_files unless @path.directory?
+
       all_files - ignored_files
     end
 
@@ -102,10 +99,6 @@ module Fastererer
 
     def ignored_files
       config.ignored_files
-    end
-
-    def nil_config_file
-      config.nil_file
     end
   end
 

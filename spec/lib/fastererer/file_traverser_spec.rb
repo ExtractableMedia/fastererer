@@ -80,97 +80,6 @@ describe Fastererer::FileTraverser do
     end
   end
 
-  describe 'config_file' do
-    context 'with no config file' do
-      let(:file_traverser) { described_class.new('.') }
-
-      it 'returns nil_config_file' do
-        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
-      end
-    end
-
-    context 'with empty config file' do
-      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, '') }
-
-      let(:file_traverser) { described_class.new('.') }
-
-      it 'returns nil_config_file' do
-        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
-      end
-    end
-
-    context 'with missing exclude_paths key' do
-      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, ['speedups:']) }
-
-      let(:file_traverser) { described_class.new('.') }
-
-      it 'returns nil_config_file' do
-        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
-      end
-    end
-
-    context 'with speedups content but no exclude_paths' do
-      let(:config_file_content) do
-        "speedups:\n  " \
-          'keys_each_vs_each_key: true'
-      end
-      let(:file_traverser) { described_class.new('.') }
-
-      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
-
-      it 'returns config_file with added exclude paths key' do
-        expect(file_traverser.config_file)
-          .to eq('speedups' => { 'keys_each_vs_each_key' => true }, 'exclude_paths' => [])
-      end
-    end
-
-    context 'with exclude_paths content but no speedups' do
-      let(:config_file_content) do
-        "exclude_paths:\n  " \
-          "- 'spec/support/analyzer/*.rb'"
-      end
-      let(:file_traverser) { described_class.new('.') }
-
-      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
-
-      it 'returns config_file with added speedups key' do
-        expect(file_traverser.config_file)
-          .to eq('speedups' => {}, 'exclude_paths' => ['spec/support/analyzer/*.rb'])
-      end
-    end
-
-    context 'with exclude_paths and speedups content' do
-      let(:config_file_content) do
-        "speedups:\n  " \
-          "keys_each_vs_each_key: true\n" \
-          "exclude_paths:\n  " \
-          "- 'spec/support/analyzer/*.rb'"
-      end
-      let(:file_traverser) { described_class.new('.') }
-
-      before { create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME, config_file_content) }
-
-      it 'returns config_file' do
-        expect(file_traverser.config_file)
-          .to eq('speedups' => { 'keys_each_vs_each_key' => true },
-                 'exclude_paths' => ['spec/support/analyzer/*.rb'])
-      end
-    end
-
-    context 'with empty values' do
-      before do
-        create_file(Fastererer::FileTraverser::CONFIG_FILE_NAME,
-                    ['speedups:', '', 'exclude_paths:'])
-      end
-
-      let(:file_traverser) { described_class.new('.') }
-
-      it 'returns nil_config_file' do
-        expect(file_traverser.config_file).to eq(file_traverser.send(:nil_config_file))
-      end
-    end
-  end
-
   describe '#offenses_found?' do
     let(:file_traverser) { described_class.new('.', formatter: quiet_formatter) }
 
@@ -356,7 +265,7 @@ describe Fastererer::FileTraverser do
         end
       end
 
-      context 'with a config file ignoring it' do
+      context 'with a config file excluding it' do
         let(:config_file_content) do
           "exclude_paths:\n  " \
             "- 'something.rb'"
@@ -367,8 +276,8 @@ describe Fastererer::FileTraverser do
           create_file('something.rb')
         end
 
-        it 'returns empty array' do
-          expect(file_traverser.scannable_files).to be_empty
+        it 'scans it anyway, because it was named on the command line' do
+          expect(file_traverser.scannable_files).to contain_exactly(argument)
         end
       end
       # rubocop:enable RSpec/NestedGroups
