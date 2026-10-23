@@ -30,6 +30,9 @@ for the commands used to run them, the coverage floors, and the conventions that
 - Use a maximum example group nesting of 4 levels. Several specs carry
   `# rubocop:disable RSpec/NestedGroups` where they exceed it; prefer restructuring over adding
   another disable.
+- Helper methods defined below the examples go under a bare `private` (as in
+  `spec/exe/fastererer_spec.rb`), marking them as scaffolding rather than part of the narrative.
+  Helpers placed at the top beside the `let`s read as setup and take no marker.
 
 ## Style
 
@@ -38,6 +41,15 @@ for the commands used to run them, the coverage floors, and the conventions that
 - Use single-line `let` statements and `before` blocks whenever they fit the 100-character RuboCop
   limit (e.g. `let(:offense) { described_class.new(:gsub_vs_tr, 12) }`, `before { analyzer.scan }`)
 - Generally prefer fewer lines — avoid unnecessary multi-line blocks for simple expressions
+- When `RSpec/MultipleExpectations` fires on assertions that describe one behavior, tag the example
+  `:aggregate_failures` rather than reshaping them. The cop counts an `expect` inside a
+  `raise_error` block, so an exit status checked with the message printed alongside it needs the
+  tag; keep the two in one compound, `output(...).to_stderr.and raise_error(SystemExit) { ... }`, as
+  `spec/lib/fastererer/cli_spec.rb` does. Splitting them into two `expect {}` blocks lets
+  `SystemExit` escape the first, which ends the run and reports only the examples before it. Don't
+  match the exception with `an_object_having_attributes(class: SystemExit)` either:
+  `raise_error(SystemExit)` accepts subclasses and an attribute match on `class` does not. Unrelated
+  assertions still get their own example.
 - **Write variable names out in full.** Match what the surrounding file already uses; prefer
   `method_call` over `mc`, `offending_lines` over `lines`. Clarity beats brevity in test code.
 
