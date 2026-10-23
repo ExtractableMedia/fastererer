@@ -156,8 +156,9 @@ Your primary responsibilities:
   existing scenario specs assert counts — don't copy them
 - Fixtures are parsed, never loaded: they hold deliberately pathological code, and `spec_helper`'s
   `support/*.rb` glob is single-star on purpose. Never widen it to `support/**/*.rb`
-- `RSpec/MultipleExpectations` runs at the default maximum of one — split into separate examples,
-  or tag the example `:aggregate_failures` when the assertions describe a single behavior
+- `RSpec/MultipleExpectations` runs at the default maximum of one — split into separate examples, or
+  tag the example `:aggregate_failures` when the assertions describe a single behavior. Never split
+  a call that exits: a `SystemExit` outside `raise_error` ends the whole run
 - One `context 'when …'` per precondition, with an `it` string naming only the resulting behavior.
   Existing specs carry `# rubocop:disable RSpec/NestedGroups`; restructure rather than adding one
 - Order method-named `describe` blocks to match the source's method order, with nested-class tests

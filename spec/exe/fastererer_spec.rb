@@ -67,12 +67,10 @@ describe 'Fastererer CLI' do
     # Backtick subshells are non-TTY, so these only assert the negative; positive in painter_spec
     before { create_file('user.rb', '[].shuffle.first') }
 
-    it 'auto-disables color when STDOUT is piped' do
+    it 'auto-disables color when STDOUT is piped', :aggregate_failures do
       output = `#{fasterer_bin}`
-      aggregate_failures do
-        expect(output).not_to include("\e[")
-        expect(output).to include('user.rb')
-      end
+      expect(output).not_to include("\e[")
+      expect(output).to include('user.rb')
     end
 
     it 'auto-disables color when NO_COLOR is set' do

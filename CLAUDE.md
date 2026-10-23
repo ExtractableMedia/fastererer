@@ -38,6 +38,11 @@ erase the original; GitHub keeps it in the description's edit history.
 
 - Always use the `/commit` slash command when writing or editing a commit message — this includes
   creating new commits, amending commits, and editing commit messages
+- Pull requests are rebase-merged (`gh pr merge --rebase`), so every commit left on the branch
+  reaches `main`. Correct an earlier or already-pushed commit with a new commit that says what it
+  fixes rather than amending and force-pushing; a stale commit message waits for the squash. Squash
+  the branch only when asked, as the last step before merging: that one force-push uses
+  `--force-with-lease`, and the squash message describes the end state.
 - Consider using the `/doc-review` slash command after writing or updating a significant amount of
   documentation
 
