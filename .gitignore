@@ -19,6 +19,10 @@
 /pkg/
 *.gem
 
+# Ignore review scaffolding. This repository is public and these quote source and file paths.
+/local-review.md
+/plan-review.md
+
 # Ignore temporary files and operating system cruft
 /tmp/
 .DS_Store
